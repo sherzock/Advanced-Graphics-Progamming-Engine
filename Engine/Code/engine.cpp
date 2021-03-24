@@ -180,13 +180,6 @@ u32 LoadTexture2D(App* app, const char* filepath)
 
 void Init(App* app)
 {
-    // TODO: Initialize your resources here!
-    // - vertex buffers
-    // - element/index buffers
-    // - vaos
-    // - programs (and retrieve uniform indices)
-    // - textures
-
     //VBO Initialization
     glGenBuffers(1, &app->embeddedVertices);
     glBindBuffer(GL_ARRAY_BUFFER, app->embeddedVertices);
@@ -268,16 +261,6 @@ void Render(App* app)
     {
         case Mode_TexturedQuad:
             {
-                // TODO: Draw your textured quad here!
-                // - clear the framebuffer
-                // - set the viewport
-                // - set the blending state
-                // - bind the texture into unit 0
-                // - bind the program 
-                //   (...and make its texture sample from unit 0)
-                // - bind the vao
-                // - glDrawElements() !!!
-
                 glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
