@@ -16,6 +16,9 @@
     <Filter Include="Stb">
       <UniqueIdentifier>{0ac2ff0f-5f18-480a-8bd6-6aa7428166bb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Assimp">
+      <UniqueIdentifier>{df10df61-5240-4c7c-8a98-377ffa9828d7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui-docking\imgui.cpp">
@@ -50,6 +53,9 @@
     </ClCompile>
     <ClCompile Include="ThirdParty\stb\stb.cpp">
       <Filter>Stb</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\assimp_model_loading.cpp">
+      <Filter>Assimp</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
