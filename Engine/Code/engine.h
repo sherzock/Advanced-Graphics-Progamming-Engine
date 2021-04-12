@@ -31,6 +31,7 @@ struct Texture
 enum Mode
 {
     Mode_TexturedQuad,
+    Mode_TexturedMesh,
     Mode_Count
 };
 
@@ -157,11 +158,14 @@ struct App
     ivec2 displaySize;
 
     std::vector<Texture>  textures;
+    std::vector<Material> materials;
+    std::vector<Mesh>     meshes;
+    std::vector<Model>    models;
     std::vector<Program>  programs;
 
     // program indices
     u32 texturedGeometryProgramIdx;
-    u32 texturedMeshProgram;
+    u32 texturedMeshProgramIdx;
 
     // texture indices
     u32 diceTexIdx;
@@ -169,6 +173,9 @@ struct App
     u32 blackTexIdx;
     u32 normalTexIdx;
     u32 magentaTexIdx;
+
+    // Model indices
+    u32 model;
 
     // Mode
     Mode mode;
