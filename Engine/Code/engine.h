@@ -149,6 +149,14 @@ struct Camera
     glm::vec3 speed;
 };
 
+struct Entity
+{
+    glm::mat4   worldMatrix;
+    u32         modelIndex;
+    u32         localParamsOffset;
+    u32         localParamsSize;
+};
+
 struct App
 {
     //OpenGL info
@@ -172,6 +180,7 @@ struct App
     std::vector<Mesh>     meshes;
     std::vector<Model>    models;
     std::vector<Program>  programs;
+    std::vector<Entity>   entities;
 
     // program indices
     u32 texturedGeometryProgramIdx;
@@ -208,6 +217,12 @@ struct App
     glm::mat4 projection;
     glm::mat4 view;
     glm::mat4 modl;
+
+    //Uniform buffers parameters
+    GLint maxUniformBufferSize;
+    GLint uniformBlockAlignment;
+    GLuint uniformBufferHandle;
+
 };
 
 void Init(App* app);
@@ -219,5 +234,11 @@ void Update(App* app);
 void Render(App* app);
 
 u32 LoadTexture2D(App* app, const char* filepath);
+
+u32 Align(u32 value, u32 alignment);
+
+glm::mat4 TransformScale(const vec3& scaleFactors);
+
+glm::mat4 TransformPositionScale(const vec3& pos,const vec3& scaleFactors);
 
 

@@ -11,6 +11,7 @@
 #include <stb_image.h>
 #include <stb_image_write.h>
 
+#define BINDING(b) b
 
 
 GLuint CreateProgramFromSource(String programSource, const char* shaderName)
@@ -289,6 +290,19 @@ void OnGlError(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei l
     }
 }
 
+glm::mat4 TransformScale(const vec3& scaleFactors)
+{
+    glm::mat4 transform = scale(scaleFactors);
+    return transform;
+}
+
+glm::mat4 TransformPositionScale(const vec3& pos, const vec3& scaleFactors)
+{
+    glm::mat4 transform = translate(pos);
+    transform = scale(transform, scaleFactors);
+    return transform;
+}
+
 
 void Init(App* app)
 {
@@ -360,6 +374,31 @@ void Init(App* app)
     camera.y = 0.0f;
     camera.p = 0.0f;
     camera.position = glm::vec3(0.0, 0.0, 10.0);
+
+    //Uniform buffers parameters
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBlockAlignment);
+
+    glGenBuffers(1, &app->uniformBufferHandle);
+    glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBufferHandle);
+    glBufferData(GL_UNIFORM_BUFFER, app->maxUniformBufferSize, NULL, GL_STREAM_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    //Entities Creation
+    Entity patrick1;
+    patrick1.worldMatrix = TransformPositionScale({ 5.0, 0.0, 0.0 }, {1.0,1.0,1.0});
+    patrick1.modelIndex = app->model;
+    app->entities.push_back(patrick1);
+
+    Entity patrick2;
+    patrick2.worldMatrix = TransformPositionScale({ 0.0, 0.0, 0.0 }, { 1.0,1.0,1.0 });
+    patrick2.modelIndex = app->model;
+    app->entities.push_back(patrick2);
+
+    Entity patrick3;
+    patrick3.worldMatrix = TransformPositionScale({ -5.0, 0.0, 0.0 }, { 2.0,2.0,2.0 });
+    patrick3.modelIndex = app->model;
+    app->entities.push_back(patrick3);
 }
 
 void Gui(App* app)
@@ -383,6 +422,11 @@ void Gui(App* app)
     }
     ImGui::EndChild();
     ImGui::End();
+}
+
+u32 Align(u32 value, u32 alignment)
+{
+    return(value + alignment - 1) & ~(alignment - 1);
 }
 
 void Update(App* app)
@@ -458,6 +502,33 @@ void Update(App* app)
     app->projection = glm::perspective(glm::radians(60.0f), aspectRatio, 0.1f, 1000.0f);
     app->view = glm::lookAt(c.position, c.position + c.forward, upVector);
     app->modl = glm::mat4(1.0f);
+
+    //Uniform Buffer update
+    glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBufferHandle);
+    u8* bufferData = (u8*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+    u32 bufferHead = 0;
+
+    for (int i = 0; i < app->entities.size(); ++i)
+    {
+
+        bufferHead = Align(bufferHead, app->uniformBlockAlignment);
+
+        app->entities[i].localParamsOffset = bufferHead;
+
+
+        memcpy(bufferData + bufferHead, glm::value_ptr(app->entities[i].worldMatrix), sizeof(glm::mat4));
+        bufferHead += sizeof(glm::mat4);
+
+        memcpy(bufferData + bufferHead, glm::value_ptr(app->view), sizeof(glm::mat4));
+        bufferHead += sizeof(glm::mat4);
+
+        memcpy(bufferData + bufferHead, glm::value_ptr(app->projection), sizeof(glm::mat4));
+        bufferHead += sizeof(glm::mat4);
+
+        app->entities[i].localParamsSize = bufferHead - app->entities[i].localParamsOffset;
+    }
+    glUnmapBuffer(GL_UNIFORM_BUFFER);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void Render(App* app)
@@ -506,39 +577,40 @@ void Render(App* app)
 
             glEnable(GL_DEPTH_TEST);
 
-            // Bind the program
-            Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
-            glUseProgram(texturedMeshProgram.handle);
+            
 
-            Model& model = app->models[app->model];
-            Mesh& mesh = app->meshes[model.meshIdx];
-
-            for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+            for (int i = 0; i < app->entities.size(); ++i)
             {
-                GLuint vao = FindVAO(mesh, i, texturedMeshProgram);
-                glBindVertexArray(vao);
 
-                u32 submeshMaterialIdx = model.materialIdx[i];
-                Material& submeshMaterial = app->materials[submeshMaterialIdx];
+                // Bind the program
+                Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
+                glUseProgram(texturedMeshProgram.handle);
 
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
-                //glUniform1i(app->programUniformTexture, 0);
+                //Send Uniforms
 
-                // Draw elements
-                Submesh& submesh = mesh.submeshes[i];
-                glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+                glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->uniformBufferHandle, app->entities[i].localParamsOffset, app->entities[i].localParamsSize);
+
+                Model& model = app->models[app->entities[i].modelIndex];
+                Mesh& mesh = app->meshes[model.meshIdx];
+
+                for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+                {
+                    GLuint vao = FindVAO(mesh, i, texturedMeshProgram);
+                    glBindVertexArray(vao);
+
+                    u32 submeshMaterialIdx = model.materialIdx[i];
+                    Material& submeshMaterial = app->materials[submeshMaterialIdx];
+
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
+                    glUniform1i(app->programUniformTexture, 0);
+
+                    // Draw elements
+                    Submesh& submesh = mesh.submeshes[i];
+                    glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+                }
+
             }
-
-            //Send Uniforms
-            int modelLoc = glGetUniformLocation(texturedMeshProgram.handle, "model");
-            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(app->modl));
-
-            int viewLoc = glGetUniformLocation(texturedMeshProgram.handle, "view");
-            glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(app->view));
-
-            int projLoc = glGetUniformLocation(texturedMeshProgram.handle, "projection");
-            glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(app->projection));
 
 
             glPopDebugGroup();
