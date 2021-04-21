@@ -353,6 +353,13 @@ void Init(App* app)
     {
         app->info.GLExtensions.push_back((const char*)glGetStringi(GL_EXTENSIONS, GLuint(i)));
     }
+
+
+    //Camera stuff
+    Camera& camera = app->cam;
+    camera.y = 0.0f;
+    camera.p = 0.0f;
+    camera.position = glm::vec3(0.0, 0.0, 10.0);
 }
 
 void Gui(App* app)
@@ -394,6 +401,63 @@ void Update(App* app)
             program.lastWriteTimestamp = currentTimestamp;
         }
     }
+
+    // Camera update
+    Camera& c = app->cam;
+    
+    
+    if (app->input.mouseButtons[RIGHT] == BUTTON_PRESSED)
+    {
+        c.y += app->input.mouseDelta.x * TAU / 360.0f;
+        c.p -= app->input.mouseDelta.y * TAU / 360.0f;
+    }
+    
+    c.y = glm::mod(c.y, TAU);
+    c.p = glm::clamp(c.p, -PI / 2.1f, PI / 2.1f);
+    c.forward = glm::vec3(cosf(c.p) * sinf(c.y), sinf(c.p), -cosf(c.p) * cosf(c.y));
+    c.right = glm::vec3(cosf(c.y), 0.0f, sinf(c.y));
+
+    bool acc = false;
+    
+    if (app->input.keys[K_W] == BUTTON_PRESSED) 
+    {
+        acc = true; c.speed += c.forward;
+    }
+    
+    if (app->input.keys[K_S] == BUTTON_PRESSED) 
+    {
+        acc = true; c.speed -= c.forward;
+    }
+    
+    if (app->input.keys[K_D] == BUTTON_PRESSED) 
+    {
+        acc = true; c.speed += c.right;
+    }
+    
+    if (app->input.keys[K_A] == BUTTON_PRESSED) 
+    {
+        acc = true; c.speed -= c.right;
+    }
+    
+    if (!acc) { c.speed *= 0.8; }
+
+    if (glm::length(c.speed) > 100.0f) 
+    {
+        c.speed = 100.0f * glm::normalize(c.speed);
+    }
+    else if (glm::length(c.speed) < 0.01f) 
+    {
+        c.speed = glm::vec3(0.0f);
+    }
+
+    c.position += c.speed * app->deltaTime;
+
+    glm::vec3 upVector = glm::vec3(0.0f, 1.0f, 0.0f);
+    float aspectRatio = (float)app->displaySize.x / (float)app->displaySize.y;
+    
+    app->projection = glm::perspective(glm::radians(60.0f), aspectRatio, 0.1f, 1000.0f);
+    app->view = glm::lookAt(c.position, c.position + c.forward, upVector);
+    app->modl = glm::mat4(1.0f);
 }
 
 void Render(App* app)
@@ -439,6 +503,9 @@ void Render(App* app)
         case Mode_TexturedMesh:
         {
             glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Rendered Mesh");
+
+            glEnable(GL_DEPTH_TEST);
+
             // Bind the program
             Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
             glUseProgram(texturedMeshProgram.handle);
@@ -462,6 +529,18 @@ void Render(App* app)
                 Submesh& submesh = mesh.submeshes[i];
                 glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
             }
+
+            //Send Uniforms
+            int modelLoc = glGetUniformLocation(texturedMeshProgram.handle, "model");
+            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(app->modl));
+
+            int viewLoc = glGetUniformLocation(texturedMeshProgram.handle, "view");
+            glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(app->view));
+
+            int projLoc = glGetUniformLocation(texturedMeshProgram.handle, "projection");
+            glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(app->projection));
+
+
             glPopDebugGroup();
         }
         break;
