@@ -6,6 +6,7 @@
 //
 
 #include "engine.h"
+#include "assimp.h"
 #include <imgui.h>
 #include <stb_image.h>
 #include <stb_image_write.h>
@@ -328,17 +329,18 @@ void Init(App* app)
     Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
     
 
-    //texturedMeshProgram.vertexInputLayout.attributes.push_back((0, 3));//position
-    //texturedMeshProgram.vertexInputLayout.attributes.push_back((2, 2));//texcoord
+    //Load model patrick
+    app->model = LoadModel(app, "Patrick/Patrick.obj");
+
 
     //Texture Initialization
-    app->diceTexIdx = LoadTexture2D(app, "dice.png");
+    /*app->diceTexIdx = LoadTexture2D(app, "dice.png");
     app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
     app->blackTexIdx = LoadTexture2D(app, "color_black.png");
     app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
-    app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
+    app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");*/
 
-    app->mode = Mode_TexturedQuad;
+    app->mode = Mode_TexturedMesh;
 
     app->info.GLVers = (const char *)glGetString(GL_VERSION);
     app->info.GLRender = (const char*)glGetString(GL_RENDERER);
@@ -396,32 +398,38 @@ void Update(App* app)
 
 void Render(App* app)
 {
+
+    // Clear the framebuffer
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Set the viewport
+    glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+
     switch (app->mode)
     {
         case Mode_TexturedQuad:
             {
                 glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Rendered Texture Quad");
-                glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                // Bind the program
+                Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
+                glUseProgram(texturedGeometryProgram.handle);
 
-                glViewport(0, 0, app->displaySize.x, app->displaySize.y);
-
-                Program& programTexturedGeometry = app->programs[app->texturedGeometryProgramIdx];
-                glUseProgram(programTexturedGeometry.handle);
+                // Bind the vao       
                 glBindVertexArray(app->vao);
 
+                // Set the blending state
                 glEnable(GL_BLEND);
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-                glUniform1i(app->programUniformTexture, 0);
+                // Bind the texture into unit 0
                 glActiveTexture(GL_TEXTURE0);
+
                 GLuint textureHandle = app->textures[app->diceTexIdx].handle;
                 glBindTexture(GL_TEXTURE_2D, textureHandle);
 
+                // Draw elements
                 glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-
-                glBindVertexArray(0);
-                glUseProgram(0);
 
                 glPopDebugGroup();
 
@@ -448,7 +456,7 @@ void Render(App* app)
 
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
-                //glUniform1i(app->programMeshTexture, 0);
+                //glUniform1i(app->programUniformTexture, 0);
 
                 // Draw elements
                 Submesh& submesh = mesh.submeshes[i];
@@ -458,6 +466,9 @@ void Render(App* app)
         }
         break;
 
-        default:;
+        
     }
+
+    glBindVertexArray(0);
+    glUseProgram(0);
 }
