@@ -7,6 +7,7 @@
 
 #include "engine.h"
 #include "assimp.h"
+#include "buffer_management.h"
 #include <imgui.h>
 #include <stb_image.h>
 #include <stb_image_write.h>
@@ -312,25 +313,21 @@ void Init(App* app)
     }
 
     //VBO Initialization
-    glGenBuffers(1, &app->embeddedVertices);
-    glBindBuffer(GL_ARRAY_BUFFER, app->embeddedVertices);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    //Create vertex buffer
+    app->vertexBuff = CreateStaticVertexBuffer(sizeof(vertices));
 
-    glGenBuffers(1, &app->embeddedElements);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->embeddedElements);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    //Create indices buffer
+    app->elementBuff = CreateStaticIndexBuffer(sizeof(indices));
 
     //EBO Initialization
     glGenVertexArrays(1, &app->vao);
     glBindVertexArray(app->vao);
-    glBindBuffer(GL_ARRAY_BUFFER, app->embeddedVertices);
+    /*glBindBuffer(GL_ARRAY_BUFFER, app->vertexBuff.handle);*/ BindBuffer(app->vertexBuff);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexV3V2), (void*)0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VertexV3V2), (void*)12);
     glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->embeddedElements);
+    /*glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->elementBuff.handle);*/ BindBuffer(app->elementBuff);
     glBindVertexArray(0);
 
     //Program 1 Initialization
@@ -379,10 +376,8 @@ void Init(App* app)
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
     glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBlockAlignment);
 
-    glGenBuffers(1, &app->uniformBufferHandle);
-    glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBufferHandle);
-    glBufferData(GL_UNIFORM_BUFFER, app->maxUniformBufferSize, NULL, GL_STREAM_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    //create unifomr buffer
+    app->uniformBuff = CreateConstantBuffer(app->maxUniformBufferSize);
 
     //Entities Creation
     Entity patrick1;
@@ -399,6 +394,28 @@ void Init(App* app)
     patrick3.worldMatrix = TransformPositionScale({ -5.0, 0.0, 0.0 }, { 2.0,2.0,2.0 });
     patrick3.modelIndex = app->model;
     app->entities.push_back(patrick3);
+
+    // lights Creation
+    Light light1;
+    light1.type = LightType::LightType_Directional;
+    light1.direction = vec3(0.0, 1.0, 0.0);
+    light1.color = vec3(1.0, 1.0, 1.0);
+    light1.position = vec3(0.0, 5.0, 0.0);
+    app->lights.push_back(light1);
+
+    Light light2;
+    light2.type = LightType::LightType_Point;
+    light2.direction = vec3(50.0, 0.0, 0.0);
+    light2.color = vec3(0.0, 0.0, 1.0);
+    light2.position = vec3(-1.0, 1.0, 0.0);
+    app->lights.push_back(light2);
+
+    Light light3;
+    light3.type = LightType::LightType_Point;
+    light3.direction = vec3(-50.0, 0.0, 0.0);
+    light3.color = vec3(1.0, 0.0, 1.0);
+    light3.position = vec3(1.0, 1.0, 0.0);
+    app->lights.push_back(light3);
 }
 
 void Gui(App* app)
@@ -422,11 +439,6 @@ void Gui(App* app)
     }
     ImGui::EndChild();
     ImGui::End();
-}
-
-u32 Align(u32 value, u32 alignment)
-{
-    return(value + alignment - 1) & ~(alignment - 1);
 }
 
 void Update(App* app)
@@ -504,31 +516,64 @@ void Update(App* app)
     app->modl = glm::mat4(1.0f);
 
     //Uniform Buffer update
-    glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBufferHandle);
-    u8* bufferData = (u8*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-    u32 bufferHead = 0;
+    MapBuffer(app->uniformBuff, GL_WRITE_ONLY);
 
+    //Global params
+
+    app->GlobalParamsOffset = app->uniformBuff.head;
+
+    PushVec3(app->uniformBuff, app->cam.position);
+
+    PushUInt(app->uniformBuff, app->lights.size());
+
+    for (int i = 0; i < app->lights.size(); ++i)
+    {
+        AlignHead(app->uniformBuff, sizeof(vec4));
+
+        Light& light = app->lights[i];
+        PushUInt(app->uniformBuff, light.type);
+        PushVec3(app->uniformBuff, light.color);
+        PushVec3(app->uniformBuff, light.direction);
+        PushVec3(app->uniformBuff, light.position);
+    }
+
+    app->GlobalParamsSize = app->uniformBuff.head - app->GlobalParamsOffset;
+
+    //Local Params
     for (int i = 0; i < app->entities.size(); ++i)
     {
 
-        bufferHead = Align(bufferHead, app->uniformBlockAlignment);
+        AlignHead(app->uniformBuff, app->uniformBlockAlignment);
 
-        app->entities[i].localParamsOffset = bufferHead;
+        Entity& entity = app->entities[i];
+        glm::mat4        model = entity.worldMatrix;
+        glm::mat4        view = app->view;
+        glm::mat4        projection = app->projection;
+
+        entity.localParamsOffset = app->uniformBuff.head;
+        PushMat4(app->uniformBuff, model);
+        PushMat4(app->uniformBuff, view);
+        PushMat4(app->uniformBuff, projection);
+        entity.localParamsSize = app->uniformBuff.head - entity.localParamsOffset;
+
+        //app->uniformBuff.head = Align(app->uniformBuff.head, app->uniformBlockAlignment);
+
+        //app->entities[i].localParamsOffset = app->uniformBuff.head;
 
 
-        memcpy(bufferData + bufferHead, glm::value_ptr(app->entities[i].worldMatrix), sizeof(glm::mat4));
-        bufferHead += sizeof(glm::mat4);
+        //memcpy(app->uniformBuff.data + app->uniformBuff.head, glm::value_ptr(app->entities[i].worldMatrix), sizeof(glm::mat4));
+        //app->uniformBuff.head += sizeof(glm::mat4);
 
-        memcpy(bufferData + bufferHead, glm::value_ptr(app->view), sizeof(glm::mat4));
-        bufferHead += sizeof(glm::mat4);
+        //memcpy(app->uniformBuff.data + app->uniformBuff.head, glm::value_ptr(app->view), sizeof(glm::mat4));
+        //app->uniformBuff.head += sizeof(glm::mat4);
 
-        memcpy(bufferData + bufferHead, glm::value_ptr(app->projection), sizeof(glm::mat4));
-        bufferHead += sizeof(glm::mat4);
+        //memcpy(app->uniformBuff.data + app->uniformBuff.head, glm::value_ptr(app->projection), sizeof(glm::mat4));
+        //app->uniformBuff.head += sizeof(glm::mat4);
 
-        app->entities[i].localParamsSize = bufferHead - app->entities[i].localParamsOffset;
+        //app->entities[i].localParamsSize = app->uniformBuff.head - app->entities[i].localParamsOffset;
     }
-    glUnmapBuffer(GL_UNIFORM_BUFFER);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    
+    UnmapBuffer(app->uniformBuff);
 }
 
 void Render(App* app)
@@ -587,8 +632,8 @@ void Render(App* app)
                 glUseProgram(texturedMeshProgram.handle);
 
                 //Send Uniforms
-
-                glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->uniformBufferHandle, app->entities[i].localParamsOffset, app->entities[i].localParamsSize);
+                glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->uniformBuff.handle, app->GlobalParamsOffset, app->GlobalParamsSize);
+                glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->uniformBuff.handle, app->entities[i].localParamsOffset, app->entities[i].localParamsSize);
 
                 Model& model = app->models[app->entities[i].modelIndex];
                 Mesh& mesh = app->meshes[model.meshIdx];

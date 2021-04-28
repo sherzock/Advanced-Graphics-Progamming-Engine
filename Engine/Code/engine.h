@@ -157,6 +157,29 @@ struct Entity
     u32         localParamsSize;
 };
 
+struct Buffer
+{
+    GLuint      handle;
+    GLenum      type;
+    u32         size;
+    u32         head;
+    void*       data; //mapped data
+};
+
+enum LightType
+{
+    LightType_Directional,
+    LightType_Point
+};
+
+struct Light
+{
+    LightType   type;
+    vec3        color;
+    vec3        direction;
+    vec3        position;
+};
+
 struct App
 {
     //OpenGL info
@@ -181,6 +204,7 @@ struct App
     std::vector<Model>    models;
     std::vector<Program>  programs;
     std::vector<Entity>   entities;
+    std::vector<Light>    lights;
 
     // program indices
     u32 texturedGeometryProgramIdx;
@@ -199,19 +223,19 @@ struct App
     // Mode
     Mode mode;
 
-    // Embedded geometry (in-editor simple meshes such as
-    // a screen filling quad, a cube, a sphere...)
-    GLuint embeddedVertices;
-    GLuint embeddedElements;
-
     // Location of the texture uniform in the textured quad shader
     GLuint programUniformTexture;
 
     // VAO object to link our screen filling quad with our textured quad shader
     GLuint vao;
 
-
+    //Camera
     Camera cam;
+
+    //Buffers
+    Buffer vertexBuff;
+    Buffer elementBuff;
+    Buffer uniformBuff;
 
     //Uniforms
     glm::mat4 projection;
@@ -221,7 +245,10 @@ struct App
     //Uniform buffers parameters
     GLint maxUniformBufferSize;
     GLint uniformBlockAlignment;
-    GLuint uniformBufferHandle;
+
+    //Global params
+    u32 GlobalParamsOffset;
+    u32 GlobalParamsSize;
 
 };
 
@@ -234,8 +261,6 @@ void Update(App* app);
 void Render(App* app);
 
 u32 LoadTexture2D(App* app, const char* filepath);
-
-u32 Align(u32 value, u32 alignment);
 
 glm::mat4 TransformScale(const vec3& scaleFactors);
 

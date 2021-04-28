@@ -57,6 +57,9 @@
     <ClCompile Include="Code\assimp.cpp">
       <Filter>Assimp</Filter>
     </ClCompile>
+    <ClCompile Include="Code\buffer_management.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\imgui-docking\imconfig.h">
@@ -100,6 +103,9 @@
     </ClInclude>
     <ClInclude Include="Code\assimp.h">
       <Filter>Assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\buffer_management.h">
+      <Filter>Engine</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
