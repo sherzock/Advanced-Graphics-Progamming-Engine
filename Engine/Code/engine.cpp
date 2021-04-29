@@ -304,6 +304,62 @@ glm::mat4 TransformPositionScale(const vec3& pos, const vec3& scaleFactors)
     return transform;
 }
 
+//Framebuffer
+void FrameBufferObject(App* app)
+{
+    //color Texture
+    GLuint colorAttachmentHandle;
+    glGenTextures(1, & colorAttachmentHandle);
+    glBindTexture(GL_TEXTURE_2D, colorAttachmentHandle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    //depth Texture
+    GLuint depthAttachmentHandle;
+    glGenTextures(1, &depthAttachmentHandle);
+    glBindTexture(GL_TEXTURE_2D, depthAttachmentHandle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    //framebuffer
+    GLuint framebufferHandle;
+    glGenTextures(1, &framebufferHandle);
+    glBindTexture(GL_FRAMEBUFFER, framebufferHandle);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colorAttachmentHandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthAttachmentHandle, 0);
+
+    //check errors
+    GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE)
+    {
+        switch (framebufferStatus)
+        {
+            case GL_FRAMEBUFFER_UNDEFINED:                                  ELOG("GL_FRAMEBUFFER_UNDEFINED"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:                      ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:              ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:                     ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:                     ELOG("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); break;
+            case GL_FRAMEBUFFER_UNSUPPORTED:                                ELOG("GL_FRAMEBUFFER_UNSUPPORTED"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:                     ELOG("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:                   ELOG("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS"); break;
+            default: ELOG("Unknown framebuffer status error");
+        }
+    }
+
+    glDrawBuffers(1, &colorAttachmentHandle);
+    glBindBuffer(GL_FRAMEBUFFER, 0);
+
+}
 
 void Init(App* app)
 {
@@ -378,6 +434,10 @@ void Init(App* app)
 
     //create unifomr buffer
     app->uniformBuff = CreateConstantBuffer(app->maxUniformBufferSize);
+
+    //Framebuffer Init
+    FrameBufferObject(app);
+    app->displaySizeLastFrame = app->displaySize;
 
     //Entities Creation
     Entity patrick1;
@@ -574,6 +634,13 @@ void Update(App* app)
     }
     
     UnmapBuffer(app->uniformBuff);
+
+    //framebuffer check if window resize
+    if (app->displaySize != app->displaySizeLastFrame)
+    {
+        FrameBufferObject(app);
+        app->displaySizeLastFrame = app->displaySize;
+    }
 }
 
 void Render(App* app)

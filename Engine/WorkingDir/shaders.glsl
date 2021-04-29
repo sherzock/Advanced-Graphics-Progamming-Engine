@@ -115,11 +115,11 @@ void main()
 {
     	// Mat parameters
     vec3 specular = vec3(1.0);	// color reflected by mat
-    float shininess = 40.0;		// how strong specular reflections are (more shininess harder and smaller spec)
+    float shininess = 1.0;		// how strong specular reflections are (more shininess harder and smaller spec)
 	vec4 albedo = texture(uTexture, vTexCoord);
 
 	// Ambient
-    float ambientIntensity = 0.25;
+    float ambientIntensity = 0.5;
     vec3 ambientColor = albedo.xyz * ambientIntensity;
 
     vec3 N = normalize(vNormal);		// normal
@@ -130,7 +130,7 @@ void main()
 
 	for(int i = 0; i < uLightCount; ++i)
 	{
-	    float attenuation = 1.0f;
+	    float attenuation = 0.3f;
 		
 		// If it is a point light, attenuate according to distance
 		if(uLight[i].type == 1)

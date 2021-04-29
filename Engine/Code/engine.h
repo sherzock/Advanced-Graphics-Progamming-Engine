@@ -180,6 +180,7 @@ struct Light
     vec3        position;
 };
 
+
 struct App
 {
     //OpenGL info
@@ -197,6 +198,7 @@ struct App
     char openGlVersion[64];
 
     ivec2 displaySize;
+    ivec2 displaySizeLastFrame;
 
     std::vector<Texture>  textures;
     std::vector<Material> materials;
@@ -267,3 +269,4 @@ glm::mat4 TransformScale(const vec3& scaleFactors);
 glm::mat4 TransformPositionScale(const vec3& pos,const vec3& scaleFactors);
 
 
+void FrameBufferObject(App* app);
