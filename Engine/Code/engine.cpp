@@ -754,7 +754,7 @@ void Render(App* app)
             //glBindVertexArray(0);
             //glUseProgram(0);
 
-            glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
+            glBindFramebuffer(GL_FRAMEBUFFER, /*app->framebufferHandle*/0);
         }
         break;
 
