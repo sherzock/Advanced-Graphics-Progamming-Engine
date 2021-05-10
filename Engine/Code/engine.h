@@ -15,7 +15,7 @@ typedef glm::ivec3 ivec3;
 typedef glm::ivec4 ivec4;
 
 struct Image
-{
+{ 
     void* pixels;
     ivec2 size;
     i32   nchannels;
@@ -251,6 +251,13 @@ struct App
     //Global params
     u32 GlobalParamsOffset;
     u32 GlobalParamsSize;
+
+    //Framebuffer
+    GLuint framebufferHandle;
+
+    //framebuffer Attachments
+    GLuint depthAttachmentHandle;
+    GLuint colorAttachmentHandle;
 
 };
 
