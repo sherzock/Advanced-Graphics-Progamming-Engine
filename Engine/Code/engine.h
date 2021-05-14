@@ -9,6 +9,7 @@
 
 typedef glm::vec2  vec2;
 typedef glm::vec3  vec3;
+typedef glm::quat  quat;
 typedef glm::vec4  vec4;
 typedef glm::ivec2 ivec2;
 typedef glm::ivec3 ivec3;
@@ -149,8 +150,28 @@ struct Camera
     glm::vec3 speed;
 };
 
+enum class GOType
+{
+    NONE,
+    ENTITY,
+    LIGHT
+};
+
+struct GameObject
+{
+    GameObject(std::string _name, unsigned int _id, GOType _type, glm::mat4* matrix = nullptr) {
+        name = _name, id = _id, type = _type; modelMatrix = matrix;
+    }
+
+    std::string name;
+    unsigned int id;
+    GOType type;
+    glm::mat4* modelMatrix;
+};
+
 struct Entity
 {
+    unsigned int id;
     glm::mat4   worldMatrix;
     u32         modelIndex;
     u32         localParamsOffset;
@@ -174,6 +195,7 @@ enum LightType
 
 struct Light
 {
+    unsigned int id;
     LightType   type;
     vec3        color;
     vec3        direction;
@@ -185,6 +207,7 @@ struct App
 {
     //OpenGL info
     OpenGLInfo info;
+    GameObject* active_gameObject;
 
     // Loop
     f32  deltaTime;
@@ -207,6 +230,7 @@ struct App
     std::vector<Program>  programs;
     std::vector<Entity>   entities;
     std::vector<Light>    lights;
+    std::vector<GameObject> gameObjects;
 
     // program indices
     u32 texturedGeometryProgramIdx;
@@ -259,6 +283,10 @@ struct App
     GLuint depthAttachmentHandle;
     GLuint colorAttachmentHandle;
 
+    glm::vec3 vposition;
+    glm::vec3 vrotation;
+    glm::vec3 vscale;
+
 };
 
 void Init(App* app);
@@ -269,11 +297,14 @@ void Update(App* app);
 
 void Render(App* app);
 
+void GetTrasform(App* app, glm::mat4 matrix);
+
+void CreateHierarchy(App* app, GameObject* parent);
+
 u32 LoadTexture2D(App* app, const char* filepath);
 
 glm::mat4 TransformScale(const vec3& scaleFactors);
 
 glm::mat4 TransformPositionScale(const vec3& pos,const vec3& scaleFactors);
-
 
 void FrameBufferObject(App* app);

@@ -11,6 +11,8 @@
 #include <imgui.h>
 #include <stb_image.h>
 #include <stb_image_write.h>
+#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 #define BINDING(b) b
 
@@ -304,6 +306,16 @@ glm::mat4 TransformPositionScale(const vec3& pos, const vec3& scaleFactors)
     return transform;
 }
 
+glm::mat4 TransformPositionRotationScale(const vec3& pos, const vec3& rot, const vec3& scaleFactors)
+{
+    glm::mat4 transform = translate(pos);
+    transform = rotate(transform, rot.x, { 1,0,0 });
+    transform = rotate(transform, rot.y, { 0,1,0 });
+    transform = rotate(transform, rot.z, { 0,0,1 });
+    transform = scale(transform, scaleFactors);
+    return transform;
+}
+
 //Framebuffer
 void FrameBufferObject(App* app)
 {
@@ -437,22 +449,29 @@ void Init(App* app)
     //create unifomr buffer
     app->uniformBuff = CreateConstantBuffer(app->maxUniformBufferSize);
 
+    int id = -1;
 
     //Entities Creation
     Entity patrick1;
     patrick1.worldMatrix = TransformPositionScale({ 5.0, 0.0, 0.0 }, {1.0,1.0,1.0});
     patrick1.modelIndex = app->model;
+    patrick1.id = ++id;
     app->entities.push_back(patrick1);
+    app->gameObjects.push_back(GameObject("patrick1", id, GOType::ENTITY, &patrick1.worldMatrix));
 
     Entity patrick2;
     patrick2.worldMatrix = TransformPositionScale({ 0.0, 0.0, 0.0 }, { 1.0,1.0,1.0 });
     patrick2.modelIndex = app->model;
+    patrick2.id = ++id;
     app->entities.push_back(patrick2);
+    app->gameObjects.push_back(GameObject("patrick2", id, GOType::ENTITY, &patrick2.worldMatrix));
 
     Entity patrick3;
     patrick3.worldMatrix = TransformPositionScale({ -5.0, 0.0, 0.0 }, { 2.0,2.0,2.0 });
     patrick3.modelIndex = app->model;
+    patrick3.id = ++id;
     app->entities.push_back(patrick3);
+    app->gameObjects.push_back(GameObject("patrick3", id, GOType::ENTITY, &patrick3.worldMatrix));
 
     // lights Creation
     Light light1;
@@ -460,28 +479,79 @@ void Init(App* app)
     light1.direction = vec3(0.0, 1.0, 0.0);
     light1.color = vec3(1.0, 1.0, 1.0);
     light1.position = vec3(0.0, 5.0, 0.0);
+    light1.id = ++id;
     app->lights.push_back(light1);
+    //app->gameObjects.push_back(GameObject("Directional1", id, GOType::LIGHT));
 
     Light light2;
     light2.type = LightType::LightType_Point;
     light2.direction = vec3(50.0, 0.0, 0.0);
     light2.color = vec3(0.0, 0.0, 1.0);
     light2.position = vec3(-1.0, 1.0, 0.0);
+    light2.id = ++id;
     app->lights.push_back(light2);
+    //app->gameObjects.push_back(GameObject("Point1", id, GOType::LIGHT));
 
     Light light3;
     light3.type = LightType::LightType_Point;
     light3.direction = vec3(-50.0, 0.0, 0.0);
     light3.color = vec3(1.0, 0.0, 1.0);
     light3.position = vec3(1.0, 1.0, 0.0);
+    light3.id = ++id;
     app->lights.push_back(light3);
+    //app->gameObjects.push_back(GameObject("Point2", id, GOType::LIGHT));
+
+    app->active_gameObject = &app->gameObjects[0];
+    GetTrasform(app, *app->active_gameObject->modelMatrix);
 }
+
 
 void Gui(App* app)
 {
     bool active = true;
     ImGui::Begin("Scene", &active, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     ImGui::Image((void*)app->colorAttachmentHandle, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
+    ImGui::End();
+
+    ImGui::Begin("Hierarchy");
+    for (int i = 0; i < app->gameObjects.size(); i++)
+    {
+        CreateHierarchy(app, &app->gameObjects[i]);
+    }
+    ImGui::End();
+
+    ImGui::Begin("Inspector");
+    ImGui::SetNextItemWidth(200);
+    ImGui::InputText("Name", (char*)app->active_gameObject->name.c_str(), 20);
+    if (app->active_gameObject) {
+        if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen) && app->active_gameObject->type == GOType::ENTITY)
+        {
+            vec3 last_position = app->vposition;
+            ImGui::Text("Position:");
+            ImGui::SameLine(); ImGui::PushItemWidth(60);  ImGui::PushID("pos"); ImGui::DragFloat("X", &app->vposition.x, 0.1f); ImGui::PopID(); ImGui::PopItemWidth();
+            ImGui::SameLine(); ImGui::PushItemWidth(60);  ImGui::PushID("pos"); ImGui::DragFloat("Y", &app->vposition.y, 0.1f); ImGui::PopID(); ImGui::PopItemWidth();
+            ImGui::SameLine(); ImGui::PushItemWidth(60);  ImGui::PushID("pos"); ImGui::DragFloat("Z", &app->vposition.z, 0.1f); ImGui::PopID(); ImGui::PopItemWidth();
+
+            vec3 last_rotation = app->vrotation;
+            ImGui::Text("Rotation:");
+            ImGui::SameLine(); ImGui::PushItemWidth(60); ImGui::PushID("rot"); ImGui::DragFloat("X", &app->vrotation.x, 0.1f); ImGui::PopID(); ImGui::PopItemWidth();
+            ImGui::SameLine(); ImGui::PushItemWidth(60); ImGui::PushID("rot");  ImGui::DragFloat("Y", &app->vrotation.y, 0.1f); ImGui::PopID(); ImGui::PopItemWidth();
+            ImGui::SameLine(); ImGui::PushItemWidth(60); ImGui::PushID("rot");  ImGui::DragFloat("Z", &app->vrotation.z, 0.1f); ImGui::PopID(); ImGui::PopItemWidth();
+
+            vec3 last_scale = app->vscale;
+            ImGui::Text("Scale:   ");
+            ImGui::SameLine(); ImGui::PushItemWidth(60);  ImGui::PushID("scale"); ImGui::DragFloat("X", &app->vscale.x, 0.1f); ImGui::PopID(); ImGui::PopItemWidth();
+            ImGui::SameLine(); ImGui::PushItemWidth(60);  ImGui::PushID("scale"); ImGui::DragFloat("Y", &app->vscale.y, 0.1f); ImGui::PopID(); ImGui::PopItemWidth();
+            ImGui::SameLine(); ImGui::PushItemWidth(60);  ImGui::PushID("scale"); ImGui::DragFloat("Z", &app->vscale.z, 0.1f); ImGui::PopID(); ImGui::PopItemWidth();
+
+            if (last_position.x != app->vposition.x || last_position.y != app->vposition.y || last_position.z != app->vposition.z ||
+                last_rotation.x != app->vrotation.x || last_rotation.y != app->vrotation.y || last_rotation.z != app->vrotation.z ||
+                last_scale.x != app->vscale.x || last_scale.y != app->vscale.y || last_scale.z != app->vscale.z)
+            {
+                app->entities[app->active_gameObject->id].worldMatrix = TransformPositionRotationScale(app->vposition, app->vrotation, app->vscale);
+            }
+        }
+    }
     ImGui::End();
 
     ImGui::Begin("Info");
@@ -504,6 +574,49 @@ void Gui(App* app)
     ImGui::EndChild();
     ImGui::End();
 }
+
+void GetTrasform(App* app, glm::mat4 matrix) {
+    glm::quat rotation;
+    glm::vec3 skew;
+    glm::vec4 perspective;
+    glm::decompose(matrix, app->vscale, rotation, app->vposition, skew, perspective);
+
+    app->vrotation = glm::eulerAngles(rotation) * 3.14159f / 180.f;
+}
+
+void CreateHierarchy(App* app, GameObject* parent) {
+
+    ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+    if (parent->id == app->active_gameObject->id)
+        node_flags |= ImGuiTreeNodeFlags_Selected;
+    
+    node_flags |= ImGuiTreeNodeFlags_Leaf;
+
+    if (ImGui::TreeNodeEx((void*)(intptr_t)parent->id, node_flags, parent->name.c_str())) {
+
+        if (ImGui::IsItemClicked()) {
+            app->active_gameObject = parent;
+            if (app->active_gameObject->type == GOType::ENTITY)
+            {
+                for (int i = 0; i < app->entities.size(); i++)
+                {
+                    if (app->entities[i].id == app->active_gameObject->id) {
+                        GetTrasform(app, app->entities[i].worldMatrix);
+                        break;
+                    }
+                }
+            }
+            else if (app->active_gameObject->type == GOType::LIGHT)
+            {
+
+            }
+        }
+
+        ImGui::TreePop();
+    }
+}
+
 
 void Update(App* app)
 {
