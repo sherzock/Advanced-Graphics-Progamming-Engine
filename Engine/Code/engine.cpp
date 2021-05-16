@@ -629,7 +629,7 @@ void Gui(App* app)
                 last_scale.x != app->vscale.x || last_scale.y != app->vscale.y || last_scale.z != app->vscale.z)
             {
                 if (app->active_gameObject->type == GOType::ENTITY)
-                    app->entities[app->active_gameObject->index].worldMatrix = TransformPositionRotationScale(app->vposition, app->vrotation, app->vscale);
+                    app->entities[app->active_gameObject->index].worldMatrix = TransformPositionRotationScale(app->vposition, (app->vrotation * 3.14159f) / 180.f, app->vscale);
                 else if (app->active_gameObject->type == GOType::LIGHT)
                     app->lights[app->active_gameObject->index].position = app->vposition;
             }
@@ -664,7 +664,7 @@ void GetTrasform(App* app, glm::mat4 matrix) {
     glm::vec4 perspective;
     glm::decompose(matrix, app->vscale, rotation, app->vposition, skew, perspective);
 
-    app->vrotation = glm::eulerAngles(rotation) * 3.14159f / 180.f;
+    app->vrotation = (glm::eulerAngles(rotation) * 180.f) / 3.14159f;
 }
 
 void GetTrasform(App* app, glm::vec3 position) {
