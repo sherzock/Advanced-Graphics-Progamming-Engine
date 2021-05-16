@@ -159,12 +159,13 @@ enum class GOType
 
 struct GameObject
 {
-    GameObject(std::string _name, unsigned int _id, GOType _type, glm::mat4* matrix = nullptr) {
-        name = _name, id = _id, type = _type; modelMatrix = matrix;
+    GameObject(std::string _name, unsigned int _id, unsigned int _index, GOType _type, glm::mat4* matrix = nullptr) {
+        name = _name, id = _id, index = _index, type = _type; modelMatrix = matrix;
     }
 
     std::string name;
     unsigned int id;
+    unsigned int index;
     GOType type;
     glm::mat4* modelMatrix;
 };
