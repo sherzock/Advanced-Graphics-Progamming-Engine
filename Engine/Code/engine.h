@@ -35,6 +35,13 @@ enum Mode
     Mode_TexturedMesh,
     Mode_Count
 };
+enum Modes
+{
+    Mode_Color,
+    Mode_Depth,
+    Mode_Albedo,
+    Mode_Normal
+};
 
 struct OpenGLInfo
 {
@@ -248,6 +255,7 @@ struct App
 
     // Mode
     Mode mode;
+    Modes modes;
 
     // Location of the texture uniform in the textured quad shader
     GLuint programUniformTexture;
@@ -281,11 +289,18 @@ struct App
 
     //framebuffer Attachments
     GLuint depthAttachmentHandle;
-    GLuint colorAttachmentHandle;
+    GLuint colorTexHandle;
+    GLuint normalTexhandle;
+    GLuint albedoTexhandle;
+    GLuint depthTexhandle;
 
     glm::vec3 vposition;
     glm::vec3 vrotation;
     glm::vec3 vscale;
+
+    //imgui stuff
+    const char* rmodes[4] = { "color","depth","albedo","normals" };
+    int selectedmode = 0;
 
 };
 

@@ -53,8 +53,6 @@ struct Light
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec2 aTexCoord;
-//layout(location = 3) in vec3 aTangent;
-//layout(location = 4) in vec3 aBitangent;
 
 layout(binding = 0, std140) uniform GlobalParams
 {
@@ -109,7 +107,18 @@ layout(binding = 0, std140) uniform GlobalParams
 };
 
 layout(location = 0) out vec4 oColor;
+layout(location = 1) out vec4 oNormals;
+layout(location = 2) out vec4 oAlbedo;
+layout(location = 3) out vec4 oDepth;
 
+float near = 0.1; 
+float far  = 100.0;
+
+float LinearizeDepth(float depth) 
+{
+    float z = depth * 2.0 - 1.0; // back to NDC 
+    return (2.0 * near * far) / (far + near - z * (far - near));	
+}
 
 void main()
 {
@@ -149,6 +158,12 @@ void main()
 	}
 
 	oColor = vec4(ambientColor + diffuseColor + specularColor, 1.0);
+
+	oNormals = vec4(normalize(vNormal), 1.0); 
+	oAlbedo = texture(uTexture, vTexCoord);
+
+	float depth = LinearizeDepth(gl_FragCoord.z) / far; // divide by far for demonstration
+	oDepth = vec4(vec3(depth), 1.0);
 }
 
 #endif
