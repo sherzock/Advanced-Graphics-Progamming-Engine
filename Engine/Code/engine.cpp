@@ -317,18 +317,26 @@ glm::mat4 TransformPositionRotationScale(const vec3& pos, const vec3& rot, const
 }
 
 //Framebuffer
-void FrameBufferObject(App* app)
+void BufferTextureInit(GLuint& handle, ivec2 size)
 {
-    //color Texture
-    glGenTextures(1, & app->colorAttachmentHandle);
-    glBindTexture(GL_TEXTURE_2D, app->colorAttachmentHandle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glGenTextures(1, &handle);
+    glBindTexture(GL_TEXTURE_2D, handle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void FrameBufferObject(App* app)
+{
+    //color Texture
+    BufferTextureInit(app->colorTexHandle, app->displaySize);
+    BufferTextureInit(app->normalTexhandle, app->displaySize);
+    BufferTextureInit(app->albedoTexhandle, app->displaySize);
+    BufferTextureInit(app->depthTexhandle, app->displaySize);
 
     //depth Texture
     glGenTextures(1, &app->depthAttachmentHandle);
@@ -345,7 +353,10 @@ void FrameBufferObject(App* app)
     
     glGenFramebuffers(1, &app->framebufferHandle);
     glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, app->colorAttachmentHandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, app->colorTexHandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, app->normalTexhandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, app->albedoTexhandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, app->depthTexhandle, 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, app->depthAttachmentHandle, 0);
 
     //check errors
@@ -366,7 +377,6 @@ void FrameBufferObject(App* app)
         }
     }
 
-    //glDrawBuffers(1, &app->colorAttachmentHandle);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 }
@@ -416,7 +426,8 @@ void Init(App* app)
     app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
     app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
 
-    app->mode = Mode_TexturedMesh;
+    app->mode = Mode::Mode_TexturedMesh;
+    app->modes = Modes::Mode_Color;
 
     app->info.GLVers = (const char *)glGetString(GL_VERSION);
     app->info.GLRender = (const char*)glGetString(GL_RENDERER);
@@ -507,9 +518,46 @@ void Init(App* app)
 
 void Gui(App* app)
 {
+
+
     bool active = true;
     ImGui::Begin("Scene", &active, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-    ImGui::Image((void*)app->colorAttachmentHandle, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
+    ImGui::Combo("Render Mode", &app->selectedmode, app->rmodes, IM_ARRAYSIZE(app->rmodes));
+    switch (app->selectedmode)
+    {
+    case 0:
+        app->modes = Modes::Mode_Color;
+        break;
+    case 1:
+        app->modes = Modes::Mode_Depth;
+        break;
+    case 2:
+        app->modes = Modes::Mode_Albedo;
+        break;
+    case 3:
+        app->modes = Modes::Mode_Normal;
+        break;
+    }
+
+    switch (app->modes)
+    {
+    case Modes::Mode_Color:
+        ImGui::Image((void*)app->colorTexHandle, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
+        break;
+
+    case Modes::Mode_Normal:
+        ImGui::Image((void*)app->normalTexhandle, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
+        break;
+
+    case Modes::Mode_Albedo:
+        ImGui::Image((void*)app->albedoTexhandle, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
+        break;
+
+    case Modes::Mode_Depth:
+        ImGui::Image((void*)app->depthTexhandle, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
+        break;
+    }
+    //ImGui::Image((void*)app->colorTexHandle, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
     ImGui::End();
 
     ImGui::Begin("Hierarchy");
@@ -772,7 +820,6 @@ void Update(App* app)
 
 void Render(App* app)
 {
-
     // Clear the framebuffer
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -789,7 +836,7 @@ void Render(App* app)
                 glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
 
                 //Select on which render targets to draw
-                GLuint drawbuffers[] = { app->colorAttachmentHandle };
+                GLuint drawbuffers[] = { app->colorTexHandle };
                 glDrawBuffers(ARRAY_COUNT(drawbuffers), drawbuffers);
                 
                 // Clear the framebuffer
@@ -839,7 +886,7 @@ void Render(App* app)
             glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
 
             //Select on which render targets to draw
-            GLuint drawbuffers[] = {app->colorAttachmentHandle, app->depthAttachmentHandle};
+            GLuint drawbuffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
             glDrawBuffers(ARRAY_COUNT(drawbuffers), drawbuffers);
 
             // Clear the framebuffer
