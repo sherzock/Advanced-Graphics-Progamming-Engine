@@ -13,3 +13,5 @@ void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial,
 void ProcessAssimpNode(const aiScene* scene, aiNode* node, Mesh* myMesh, u32 baseMeshMaterialIndex, std::vector<u32>& submeshMaterialIndices);
 
 u32 LoadModel(App* app, const char* filename);
+
+u32 LoadPlane(App* app);

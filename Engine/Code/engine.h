@@ -137,7 +137,6 @@ struct Model
     std::vector<u32> materialIdx;
 };
 
-
 struct Program
 {
     GLuint             handle;
@@ -253,6 +252,7 @@ struct App
 
     // Model indices
     u32 model;
+    u32 plane;
 
     // Mode
     Mode mode;
@@ -324,3 +324,6 @@ glm::mat4 TransformScale(const vec3& scaleFactors);
 glm::mat4 TransformPositionScale(const vec3& pos,const vec3& scaleFactors);
 
 void FrameBufferObject(App* app);
+
+
+

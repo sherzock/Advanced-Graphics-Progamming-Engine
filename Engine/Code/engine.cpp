@@ -414,17 +414,19 @@ void Init(App* app)
     //Program 2 Initialization
     app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "SHOW_TEXTURED_MESH");
     Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
-    
-
-    //Load model patrick
-    app->model = LoadModel(app, "Patrick/Patrick.obj");
 
     //Texture Initialization
-    app->diceTexIdx = LoadTexture2D(app, "dice.png");
     app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
+    app->diceTexIdx = LoadTexture2D(app, "dice.png");
     app->blackTexIdx = LoadTexture2D(app, "color_black.png");
     app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
     app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
+
+    //Load model patrick
+    app->model = LoadModel(app, "Patrick/Patrick.obj");
+    app->plane = LoadModel(app, "../WorkingDir/Plane.obj");
+
+    //app->plane = LoadPlane(app);
 
     app->mode = Mode::Mode_TexturedMesh;
     app->modes = Modes::Mode_Color;
@@ -440,7 +442,6 @@ void Init(App* app)
     {
         app->info.GLExtensions.push_back((const char*)glGetStringi(GL_EXTENSIONS, GLuint(i)));
     }
-
 
     //Camera stuff
     Camera& camera = app->cam;
@@ -462,6 +463,13 @@ void Init(App* app)
     int id = -1;
 
     //Entities Creation
+    Entity plane;
+    plane.worldMatrix = TransformPositionScale({ 0.0, -8.0, 0.0 }, { 25.0,1.0,25.0 });
+    plane.modelIndex = app->plane;
+    plane.id = ++id;
+    app->entities.push_back(plane);
+    app->gameObjects.push_back(GameObject("Plane", id, app->entities.size() - 1, GOType::ENTITY, &plane.worldMatrix));
+
     Entity patrick1;
     patrick1.worldMatrix = TransformPositionScale({ 5.0, 0.0, 0.0 }, {1.0,1.0,1.0});
     patrick1.modelIndex = app->model;
@@ -878,9 +886,7 @@ void Render(App* app)
 
         case Mode_TexturedMesh:
         {
-
             glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Rendered Mesh");
-
 
             //Render on this framebuffer render targets
             glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
@@ -917,12 +923,15 @@ void Render(App* app)
                     GLuint vao = FindVAO(mesh, i, texturedMeshProgram);
                     glBindVertexArray(vao);
 
-                    u32 submeshMaterialIdx = model.materialIdx[i];
-                    Material& submeshMaterial = app->materials[submeshMaterialIdx];
+                    //HERE
+                    if (model.materialIdx.size() != 0) {
+                        u32 submeshMaterialIdx = model.materialIdx[i];
+                        Material& submeshMaterial = app->materials[submeshMaterialIdx];
 
-                    glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
-                    glUniform1i(app->programUniformTexture, 0);
+                        glActiveTexture(GL_TEXTURE0);
+                        glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
+                        glUniform1i(app->programUniformTexture, 0);
+                    }
 
                     // Draw elements
                     Submesh& submesh = mesh.submeshes[i];
