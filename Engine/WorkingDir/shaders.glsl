@@ -168,3 +168,104 @@ void main()
 
 #endif
 #endif
+
+//------------------------------------------------------------------------------------------------------
+//----------------------------------------Deferred Shading----------------------------------------------
+//------------------------------------------------------------------------------------------------------
+
+#ifdef Mode_DeferredGeometry
+
+struct Light
+{
+    unsigned int    type;
+    vec3            color;
+    vec3            direction;
+    vec3            position;
+};
+
+#if defined(VERTEX)
+
+layout(location = 0) in vec3 aPosition;
+layout(location = 1) in vec3 aNormal;
+layout(location = 2) in vec2 aTexCoord;
+
+layout(binding = 0, std140) uniform GlobalParams
+{
+    vec3            uCameraPosition;
+    unsigned int    uLightCount;
+    Light           uLight[16];
+};
+
+layout(binding = 1, std140) uniform LocalParams
+{
+    mat4        model;
+    mat4        view;
+    mat4        projection;
+};
+
+out vec2 vTexCoord;
+out vec3 vPosition; // In World space
+out vec3 vNormal;   // In World space
+out vec3 vViewDir;  // In World space
+
+void main()
+{
+    vTexCoord = aTexCoord;
+    vPosition = vec3(model* vec4(aPosition, 1.0));
+    vNormal = vec3(model * vec4(aNormal, 0.0));
+    vViewDir = uCameraPosition - vPosition;
+    gl_Position = projection * view * model * vec4(aPosition, 1.0);
+}
+
+#elif defined(FRAGMENT) //------------------------------------------
+
+struct Light
+{
+	unsigned int type;
+	vec3 color;
+	vec3 direction;
+	vec3 position;
+};
+
+in vec2 vTexCoord;
+in vec3 vPosition; // in worldspace
+in vec3 vNormal; // in worldspace
+in vec3 uViewDir; // in worldspace
+
+uniform sampler2D uTexture;
+
+layout(binding = 0, std140) uniform GlobalParams
+{
+	vec3 uCameraPosition;
+	unsigned int uLightCount;
+	Light uLight[16];
+};
+
+layout(location = 0) out vec4 oColor;
+layout(location = 1) out vec4 oNormals;
+layout(location = 2) out vec4 oAlbedo;
+layout(location = 3) out vec4 oDepth;
+layout(location = 4) out vec4 oPosition;
+
+float near = 0.1; 
+float far  = 100.0;
+
+float LinearizeDepth(float depth) 
+{
+    float z = depth * 2.0 - 1.0; 
+    return (2.0 * near * far) / (far + near - z * (far - near));	
+}
+
+void main()
+{
+	oPosition = vec4(normalize(vPosition,1.0));
+	oNormals = vec4(normalize(vNormal), 1.0); 
+	oAlbedo = texture(uTexture, vTexCoord);
+
+	float depth = LinearizeDepth(gl_FragCoord.z) / far; 
+	oDepth = vec4(vec3(depth), 1.0);
+
+}
+
+#endif
+#endif

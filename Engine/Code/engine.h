@@ -41,7 +41,8 @@ enum Modes
     Mode_Color,
     Mode_Depth,
     Mode_Albedo,
-    Mode_Normal
+    Mode_Normal,
+    Mode_Position
 };
 
 struct OpenGLInfo
@@ -245,7 +246,6 @@ struct App
     u32 ForwardShadingIdx;
     u32 DeferredGeometryIdx;
     u32 DeferredLightingIdx;
-    u32 ShadedProgramIdx;
 
     // texture indices
     u32 diceTexIdx;
@@ -298,13 +298,14 @@ struct App
     GLuint normalTexhandle;
     GLuint albedoTexhandle;
     GLuint depthTexhandle;
+    GLuint positionTexhandle;
 
     glm::vec3 vposition;
     glm::vec3 vrotation;
     glm::vec3 vscale;
 
     //imgui stuff
-    const char* rmodes[4] = { "color","depth","albedo","normals" };
+    const char* rmodes[5] = { "color","depth","albedo","normals", "position" };
     int selectedmode = 0;
 
 };

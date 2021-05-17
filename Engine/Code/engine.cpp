@@ -337,6 +337,7 @@ void FrameBufferObject(App* app)
     BufferTextureInit(app->normalTexhandle, app->displaySize);
     BufferTextureInit(app->albedoTexhandle, app->displaySize);
     BufferTextureInit(app->depthTexhandle, app->displaySize);
+    BufferTextureInit(app->positionTexhandle, app->displaySize);
 
     //depth Texture
     glGenTextures(1, &app->depthAttachmentHandle);
@@ -357,6 +358,7 @@ void FrameBufferObject(App* app)
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, app->normalTexhandle, 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, app->albedoTexhandle, 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, app->depthTexhandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, app->positionTexhandle, 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, app->depthAttachmentHandle, 0);
 
     //check errors
@@ -549,6 +551,9 @@ void Gui(App* app)
     case 3:
         app->modes = Modes::Mode_Normal;
         break;
+    case 4:
+        app->modes = Modes::Mode_Position;
+        break;
     }
 
     switch (app->modes)
@@ -568,6 +573,10 @@ void Gui(App* app)
     case Modes::Mode_Depth:
         ImGui::Image((void*)app->depthTexhandle, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
         break;
+    case Modes::Mode_Position:
+        ImGui::Image((void*)app->positionTexhandle, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
+        break;
+
     }
     //ImGui::Image((void*)app->colorTexHandle, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
     ImGui::End();
@@ -958,7 +967,7 @@ void Render(App* app)
             glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
 
             //Select on which render targets to draw
-            GLuint drawbuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+            GLuint drawbuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
             glDrawBuffers(ARRAY_COUNT(drawbuffers), drawbuffers);
 
             // Clear the framebuffer
@@ -1005,10 +1014,10 @@ void Render(App* app)
             }
             
             //2: Shading pass
-            glEnable(GL_DEPTH_TEST);
+ /*           glEnable(GL_DEPTH_TEST);
             glDepthMask(GL_FALSE);
             glEnable(GL_BLEND);
-            glBlendFunc(GL_ONE, GL_ONE);
+            glBlendFunc(GL_ONE, GL_ONE);*/
 
 
 
@@ -1016,7 +1025,7 @@ void Render(App* app)
             
             
             
-            
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glPopDebugGroup();
         }
         break;
