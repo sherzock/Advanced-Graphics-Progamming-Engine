@@ -1,39 +1,39 @@
 //-------------------------------------------------------------------------
-//#ifdef TEXTURED_GEOMETRY
-//
-//#if defined(VERTEX)
-//
-//// TODO: Write your vertex shader here
-//
-//layout(location = 0) in vec3 aPosition;
-////layout(location = 1) in vec3 aNormal;
-//layout(location = 2) in vec2 aTexCoord;
-////layout(location = 3) in vec3 aTangent;
-////layout(location = 4) in vec3 aBitangent;
-//
-//out vec2 vTexCoord;
-//
-//void main()
-//{
-//    vTexCoord = aTexCoord;
-//    gl_Position = vec4(aPosition, 1.0);
-//}
-//
-//#elif defined(FRAGMENT) //------------------------------------------
-//
-//in vec2 vTexCoord;
-//
-//uniform sampler2D uTexture;
-//
-//layout(location = 0) out vec4 oColor;
-//
-//void main()
-//{
-//    oColor = texture(uTexture, vTexCoord);
-//}
-//
-//#endif
-//#endif
+#ifdef TEXTURED_GEOMETRY
+
+#if defined(VERTEX)
+
+// TODO: Write your vertex shader here
+
+layout(location = 0) in vec3 aPosition;
+//layout(location = 1) in vec3 aNormal;
+layout(location = 2) in vec2 aTexCoord;
+//layout(location = 3) in vec3 aTangent;
+//layout(location = 4) in vec3 aBitangent;
+
+out vec2 vTexCoord;
+
+void main()
+{
+    vTexCoord = aTexCoord;
+    gl_Position = vec4(aPosition, 1.0);
+}
+
+#elif defined(FRAGMENT) //------------------------------------------
+
+in vec2 vTexCoord;
+
+uniform sampler2D uTexture;
+
+layout(location = 0) out vec4 oColor;
+
+void main()
+{
+    oColor = texture(uTexture, vTexCoord);
+}
+
+#endif
+#endif
 
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
@@ -244,10 +244,11 @@ layout(binding = 0, std140) uniform GlobalParams
 	Light uLight[16];
 };
 
-layout(location = 0) out vec4 oNormals;
-layout(location = 1) out vec4 oAlbedo;
-layout(location = 2) out vec4 oDepth;
-layout(location = 3) out vec4 oPosition;
+layout(location = 0) out vec4 oColor;
+layout(location = 1) out vec4 oNormals;
+layout(location = 2) out vec4 oAlbedo;
+layout(location = 3) out vec4 oDepth;
+layout(location = 4) out vec4 oPosition;
 
 float near = 0.1; 
 float far  = 100.0;
@@ -311,7 +312,7 @@ out vec3 vPosition; // In World space
 void main()
 {
     vTexCoord = aTexCoord;
-    vPosition = projection * view * model * vec4(aPosition, 1.0);
+    vPosition = vec3(projection * view * model * vec4(uCameraPosition, 1.0));
     gl_Position =  vec4(aPosition, 1.0);
 }
 
@@ -363,7 +364,7 @@ void main()
 
 	vec3 diffuseColor;
 	vec3 specularColor;
-
+	/*
 	for(int i = 0; i < uLightCount; ++i)
 	{
 	    float attenuation = 0.3f;
@@ -385,9 +386,9 @@ void main()
 	    // Specular
 	    float specularIntensity = pow(max(dot(R, V), 0.0), shininess);
 	    specularColor += attenuation * specular * uLight[i].color * specularIntensity;
-	}
+	}*/
 
-	oColor = vec4(ambientColor + diffuseColor + specularColor, 1.0);
+	oColor = vec4(ambientColor/* + diffuseColor + specularColor*/, 1.0);
 
 }
 

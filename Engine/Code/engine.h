@@ -242,7 +242,7 @@ struct App
     std::vector<GameObject> gameObjects;
 
     // program indices
-    //u32 texturedGeometryProgramIdx;
+    u32 texturedGeometryProgramIdx;
     u32 ForwardShadingIdx;
     u32 DeferredGeometryIdx;
     u32 DeferredLightingIdx;

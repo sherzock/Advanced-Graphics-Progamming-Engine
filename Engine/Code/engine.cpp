@@ -430,9 +430,9 @@ void Init(App* app)
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 
     //Program 1 Initialization
-   /* app->texturedGeometryProgramIdx = LoadProgram(app, "shaders.glsl", "TEXTURED_GEOMETRY");
+    app->texturedGeometryProgramIdx = LoadProgram(app, "shaders.glsl", "TEXTURED_GEOMETRY");
     Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
-    app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");*/
+    //app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
 
     //Program Forward shading Initialization
     app->ForwardShadingIdx = LoadProgram(app, "shaders.glsl", "Mode_ForwardShading");
@@ -879,14 +879,11 @@ void DeferredGeometryPass(App * app)
     // Clear the framebuffer
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glViewport(0, 0, app->displaySize.x, app->displaySize.y);
-
-    //Render on this framebuffer render targets
     glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
 
 
     //Select on which render targets to draw
-    GLuint drawbuffers[] = {GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
+    GLuint drawbuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
     glDrawBuffers(ARRAY_COUNT(drawbuffers), drawbuffers);
 
     // Clear the framebuffer
@@ -897,7 +894,6 @@ void DeferredGeometryPass(App * app)
     // Bind the program
     Program& GeoDeferredShadingProgram = app->programs[app->DeferredGeometryIdx];
     glUseProgram(GeoDeferredShadingProgram.handle);
-
         
     glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->uniformBuff.handle, app->GlobalParamsOffset, app->GlobalParamsSize);
 
@@ -917,15 +913,12 @@ void DeferredGeometryPass(App * app)
             GLuint vao = FindVAO(mesh, i, GeoDeferredShadingProgram);
             glBindVertexArray(vao);
 
-            //HERE
-            if (model.materialIdx.size() != 0) {
-                u32 submeshMaterialIdx = model.materialIdx[i];
-                Material& submeshMaterial = app->materials[submeshMaterialIdx];
+            u32 submeshMaterialIdx = model.materialIdx[i];
+            Material& submeshMaterial = app->materials[submeshMaterialIdx];
 
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
-                glUniform1i(app->programUniformTexture, 0);
-            }
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
+            glUniform1i(app->programUniformTexture, 0);
 
             // Draw elements
             Submesh& submesh = mesh.submeshes[i];
@@ -937,25 +930,23 @@ void DeferredGeometryPass(App * app)
 
 void DeferredShadingPass(App * app)
 {
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE);
+    //glEnable(GL_DEPTH_TEST);
+    //glDepthMask(GL_FALSE);
+    //glEnable(GL_BLEND);
+    //glBlendFunc(GL_ONE, GL_ONE);
 
     //Render on this framebuffer render targets
-    glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
+    //glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
 
-    //Select on which render targets to draw
-    GLuint drawbuffers[] = { GL_COLOR_ATTACHMENT0 };
-    glDrawBuffers(ARRAY_COUNT(drawbuffers), drawbuffers);
-
-    // Bind the program
+     // Bind the program
     Program& ShadDeferredShadingProgram = app->programs[app->DeferredLightingIdx];
     glUseProgram(ShadDeferredShadingProgram.handle);
 
-    //Send Uniforms
-    glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->uniformBuff.handle, app->GlobalParamsOffset, app->GlobalParamsSize);
-
+    glUniform1i(glGetUniformLocation(ShadDeferredShadingProgram.handle, "oNormals"), 0);
+    glUniform1i(glGetUniformLocation(ShadDeferredShadingProgram.handle, "oAlbedo"), 1);
+    glUniform1i(glGetUniformLocation(ShadDeferredShadingProgram.handle, "oDepth"), 2);
+    glUniform1i(glGetUniformLocation(ShadDeferredShadingProgram.handle, "oPosition"), 3);
+     
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, app->normalTexhandle);
     glActiveTexture(GL_TEXTURE1);
@@ -965,6 +956,13 @@ void DeferredShadingPass(App * app)
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D, app->positionTexhandle);
 
+    //Select on which render targets to draw
+    GLuint drawbuffers[] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(ARRAY_COUNT(drawbuffers), drawbuffers);
+    
+    glDepthMask(GL_FALSE); //Send Uniforms
+    glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->uniformBuff.handle, app->GlobalParamsOffset, app->GlobalParamsSize);
+    
     //quad for deferred
     glBindVertexArray(app->quadVAO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -1070,15 +1068,12 @@ void Render(App* app)
                     GLuint vao = FindVAO(mesh, i, ForwardShadingProgram);
                     glBindVertexArray(vao);
 
-                    //HERE
-                    if (model.materialIdx.size() != 0) {
-                        u32 submeshMaterialIdx = model.materialIdx[i];
-                        Material& submeshMaterial = app->materials[submeshMaterialIdx];
+                    u32 submeshMaterialIdx = model.materialIdx[i];
+                    Material& submeshMaterial = app->materials[submeshMaterialIdx];
 
-                        glActiveTexture(GL_TEXTURE0);
-                        glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
-                        glUniform1i(app->programUniformTexture, 0);
-                    }
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
+                    glUniform1i(app->programUniformTexture, 0);
 
                     // Draw elements
                     Submesh& submesh = mesh.submeshes[i];
@@ -1098,10 +1093,23 @@ void Render(App* app)
             DeferredGeometryPass(app);
             DeferredShadingPass(app);
             
-            glPopDebugGroup();
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            Program& programTexturedGeometry = app->programs[app->texturedGeometryProgramIdx];
+            glUseProgram(programTexturedGeometry.handle);
+            glBindVertexArray(app->vao);
+
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+            glUniform1i(app->programUniformTexture, 0);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, app->colorTexHandle);
+
+
+            glPopDebugGroup();
         }
         break;
-        
+        glUseProgram(0);
     }
 }
