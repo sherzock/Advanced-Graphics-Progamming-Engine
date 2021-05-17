@@ -862,7 +862,11 @@ void Update(App* app)
 
 void DeferredGeometryPass(App * app)
 {
-    
+    // Clear the framebuffer
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+
     //Render on this framebuffer render targets
     glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
 
@@ -947,14 +951,12 @@ void DeferredShadingPass(App * app)
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D, app->positionTexhandle);
 
-
     //quad for deferred
     glBindVertexArray(app->quadVAO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindVertexArray(0);
 
-    glDepthMask(true);
-
+    glDepthMask(GL_TRUE); 
 }
 
 void Render(App* app)
@@ -962,6 +964,8 @@ void Render(App* app)
     // Clear the framebuffer
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 
     // Set the viewport
     glViewport(0, 0, app->displaySize.x, app->displaySize.y);
@@ -1068,7 +1072,6 @@ void Render(App* app)
                 }
 
             }
-
 
             glPopDebugGroup();
             glBindFramebuffer(GL_FRAMEBUFFER,0);
