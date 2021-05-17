@@ -498,21 +498,21 @@ void Init(App* app)
     app->gameObjects.push_back(GameObject("Plane", id, app->entities.size() - 1, GOType::ENTITY, &plane.worldMatrix));
 
     Entity patrick1;
-    patrick1.worldMatrix = TransformPositionScale({ 5.0, 0.0, 0.0 }, {1.0,1.0,1.0});
+    patrick1.worldMatrix = TransformPositionScale({ 4.3, -4.7, 5.2 }, {1.0,1.0,1.0});
     patrick1.modelIndex = app->model;
     patrick1.id = ++id;
     app->entities.push_back(patrick1);
     app->gameObjects.push_back(GameObject("patrick1", id, app->entities.size() - 1, GOType::ENTITY, &patrick1.worldMatrix));
 
     Entity patrick2;
-    patrick2.worldMatrix = TransformPositionScale({ 0.0, 0.0, 0.0 }, { 1.0,1.0,1.0 });
+    patrick2.worldMatrix = TransformPositionScale({ -3.3, -4.5, 5.0 }, { 1.0,1.0,1.0 });
     patrick2.modelIndex = app->model;
     patrick2.id = ++id;
     app->entities.push_back(patrick2);
     app->gameObjects.push_back(GameObject("patrick2", id, app->entities.size() - 1, GOType::ENTITY, &patrick2.worldMatrix));
 
     Entity patrick3;
-    patrick3.worldMatrix = TransformPositionScale({ -5.0, 0.0, 0.0 }, { 2.0,2.0,2.0 });
+    patrick3.worldMatrix = TransformPositionScale({ 0.0, -2.7, 0.0 }, { 1.5,1.5,1.5 });
     patrick3.modelIndex = app->model;
     patrick3.id = ++id;
     app->entities.push_back(patrick3);
@@ -522,7 +522,7 @@ void Init(App* app)
     Light light1;
     light1.type = LightType::LightType_Directional;
     light1.direction = vec3(0.0, 1.0, 0.0);
-    light1.color = vec3(1.0, 1.0, 1.0);
+    light1.color = vec3(0.0, 0.156, 1.0);
     light1.position = vec3(0.0, 5.0, 0.0);
     light1.id = ++id;
     app->lights.push_back(light1);
@@ -531,8 +531,8 @@ void Init(App* app)
     Light light2;
     light2.type = LightType::LightType_Point;
     light2.direction = vec3(50.0, 0.0, 0.0);
-    light2.color = vec3(0.0, 0.0, 1.0);
-    light2.position = vec3(-1.0, 1.0, 0.0);
+    light2.color = vec3(0.982, 0.306, 0.306);
+    light2.position = vec3(-1.0, 1.0, -1.5);
     light2.id = ++id;
     app->lights.push_back(light2);
     app->gameObjects.push_back(GameObject("Point1", id, app->lights.size() - 1, GOType::LIGHT));
@@ -540,8 +540,8 @@ void Init(App* app)
     Light light3;
     light3.type = LightType::LightType_Point;
     light3.direction = vec3(-50.0, 0.0, 0.0);
-    light3.color = vec3(1.0, 0.0, 1.0);
-    light3.position = vec3(1.0, 1.0, 0.0);
+    light3.color = vec3(0.132, 1.0, 0.0);
+    light3.position = vec3(1.2, 1.1, 3.6);
     light3.id = ++id;
     app->lights.push_back(light3);
     app->gameObjects.push_back(GameObject("Point2", id, app->lights.size() - 1, GOType::LIGHT));
