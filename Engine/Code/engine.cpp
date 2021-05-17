@@ -398,22 +398,26 @@ void Init(App* app)
     //EBO Initialization
     glGenVertexArrays(1, &app->vao);
     glBindVertexArray(app->vao);
-    /*glBindBuffer(GL_ARRAY_BUFFER, app->vertexBuff.handle);*/ BindBuffer(app->vertexBuff);
+    BindBuffer(app->vertexBuff);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexV3V2), (void*)0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VertexV3V2), (void*)12);
     glEnableVertexAttribArray(1);
-    /*glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->elementBuff.handle);*/ BindBuffer(app->elementBuff);
+    BindBuffer(app->elementBuff);
     glBindVertexArray(0);
 
     //Program 1 Initialization
-    app->texturedGeometryProgramIdx = LoadProgram(app, "shaders.glsl", "TEXTURED_GEOMETRY");
+   /* app->texturedGeometryProgramIdx = LoadProgram(app, "shaders.glsl", "TEXTURED_GEOMETRY");
     Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
-    app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
+    app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");*/
 
-    //Program 2 Initialization
-    app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "SHOW_TEXTURED_MESH");
-    Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
+    //Program Forward shading Initialization
+    app->ForwardShadingIdx = LoadProgram(app, "shaders.glsl", "Mode_ForwardShading");
+    Program& texturedMeshProgram = app->programs[app->ForwardShadingIdx];
+
+    //Program Deferred shading Initialization
+    app->DeferredGeometryIdx = LoadProgram(app, "shaders.glsl", "Mode_DeferredGeometry");
+    app->DeferredLightingIdx = LoadProgram(app, "shaders.glsl", "Mode_DeferredLighting");
 
     //Texture Initialization
     app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
@@ -428,7 +432,7 @@ void Init(App* app)
 
     //app->plane = LoadPlane(app);
 
-    app->mode = Mode::Mode_TexturedMesh;
+    app->mode = Mode::Mode_DeferredShading;
     app->modes = Modes::Mode_Color;
 
     app->info.GLVers = (const char *)glGetString(GL_VERSION);
@@ -837,56 +841,56 @@ void Render(App* app)
 
     switch (app->mode)
     {
-        case Mode_TexturedQuad:
-            {
-                
-                //Render on this framebuffer render targets
-                glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
+        //case Mode_TexturedQuad:
+        //    {
+        //        
+        //        //Render on this framebuffer render targets
+        //        glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
 
-                //Select on which render targets to draw
-                GLuint drawbuffers[] = { app->colorTexHandle };
-                glDrawBuffers(ARRAY_COUNT(drawbuffers), drawbuffers);
-                
-                // Clear the framebuffer
-                glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        //        //Select on which render targets to draw
+        //        GLuint drawbuffers[] = { app->colorTexHandle };
+        //        glDrawBuffers(ARRAY_COUNT(drawbuffers), drawbuffers);
+        //        
+        //        // Clear the framebuffer
+        //        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        //        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-                // Set the viewport
-                //glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+        //        // Set the viewport
+        //        //glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 
-                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Rendered Texture Quad");
-                // Bind the program
-                Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
-                glUseProgram(texturedGeometryProgram.handle);
+        //        glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Rendered Texture Quad");
+        //        // Bind the program
+        //        Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
+        //        glUseProgram(texturedGeometryProgram.handle);
 
-                // Bind the vao       
-                glBindVertexArray(app->vao);
+        //        // Bind the vao       
+        //        glBindVertexArray(app->vao);
 
-                // Set the blending state
-                glEnable(GL_BLEND);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        //        // Set the blending state
+        //        glEnable(GL_BLEND);
+        //        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-                // Bind the texture into unit 0
-                glActiveTexture(GL_TEXTURE0);
+        //        // Bind the texture into unit 0
+        //        glActiveTexture(GL_TEXTURE0);
 
-                GLuint textureHandle = app->textures[app->diceTexIdx].handle;
-                glBindTexture(GL_TEXTURE_2D, textureHandle);
+        //        GLuint textureHandle = app->textures[app->diceTexIdx].handle;
+        //        glBindTexture(GL_TEXTURE_2D, textureHandle);
 
-                // Draw elements
-                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+        //        // Draw elements
+        //        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
 
-                glPopDebugGroup();
+        //        glPopDebugGroup();
 
-                glBindVertexArray(0);
-                glUseProgram(0);
+        //        glBindVertexArray(0);
+        //        glUseProgram(0);
 
-                glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
-            }
-            break;
+        //        glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
+        //    }
+          /*  break;*/
 
-        case Mode_TexturedMesh:
+        case Mode_ForwardShading:
         {
-            glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Rendered Mesh");
+            glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Forward Shading");
 
             //Render on this framebuffer render targets
             glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
@@ -901,10 +905,8 @@ void Render(App* app)
             glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 
             // Bind the program
-            Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
-            glUseProgram(texturedMeshProgram.handle);
-
-            //glEnable(GL_DEPTH_TEST);
+            Program& ForwardShadingProgram = app->programs[app->ForwardShadingIdx];
+            glUseProgram(ForwardShadingProgram.handle);
 
             for (int i = 0; i < app->entities.size(); ++i)
             {
@@ -920,7 +922,7 @@ void Render(App* app)
 
                 for (u32 i = 0; i < mesh.submeshes.size(); ++i)
                 {
-                    GLuint vao = FindVAO(mesh, i, texturedMeshProgram);
+                    GLuint vao = FindVAO(mesh, i, ForwardShadingProgram);
                     glBindVertexArray(vao);
 
                     //HERE
@@ -942,16 +944,82 @@ void Render(App* app)
 
 
             glPopDebugGroup();
-
-
-
-            //glBindVertexArray(0);
-            //glUseProgram(0);
-
-            glBindFramebuffer(GL_FRAMEBUFFER, /*app->framebufferHandle*/0);
+            glBindFramebuffer(GL_FRAMEBUFFER,0);
         }
         break;
+        case Mode_DeferredShading:
+        {
+            //Render Init
 
+            //Create openglgroup for debugging
+            glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Deferred Shading");
+
+            //Render on this framebuffer render targets
+            glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
+
+            //Select on which render targets to draw
+            GLuint drawbuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+            glDrawBuffers(ARRAY_COUNT(drawbuffers), drawbuffers);
+
+            // Clear the framebuffer
+            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+
+            //1: Geometry pass
+            Program& deferredGeo = app->programs[app->DeferredGeometryIdx];
+            glUseProgram(deferredGeo.handle);
+
+            
+            for (int i = 0; i < app->entities.size(); ++i)
+            {
+
+                Model& model = app->models[app->entities[i].modelIndex];
+                Mesh& mesh = app->meshes[model.meshIdx];
+
+                //Send Uniforms
+                glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->uniformBuff.handle, app->GlobalParamsOffset, app->GlobalParamsSize);
+                glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->uniformBuff.handle, app->entities[i].localParamsOffset, app->entities[i].localParamsSize);
+
+                glEnable(GL_DEPTH_TEST);
+
+                for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+                {
+                    GLuint vao = FindVAO(mesh, i, deferredGeo);
+                    glBindVertexArray(vao);
+
+                    if (model.materialIdx.size() != 0) {
+                        u32 submeshMaterialIdx = model.materialIdx[i];
+                        Material& submeshMaterial = app->materials[submeshMaterialIdx];
+
+                        glActiveTexture(GL_TEXTURE0);
+                        glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
+                        glUniform1i(app->programUniformTexture, 0);
+                    }
+
+                    // Draw elements
+                    Submesh& submesh = mesh.submeshes[i];
+                    glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+                }
+
+            }
+            
+            //2: Shading pass
+            glEnable(GL_DEPTH_TEST);
+            glDepthMask(GL_FALSE);
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_ONE, GL_ONE);
+
+
+
+
+            
+            
+            
+            
+            glPopDebugGroup();
+        }
+        break;
         
     }
 }

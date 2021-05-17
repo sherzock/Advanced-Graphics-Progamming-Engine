@@ -31,8 +31,9 @@ struct Texture
 
 enum Mode
 {
-    Mode_TexturedQuad,
-    Mode_TexturedMesh,
+    /*Mode_TexturedQuad,*/
+    Mode_ForwardShading,
+    Mode_DeferredShading,
     Mode_Count
 };
 enum Modes
@@ -240,8 +241,11 @@ struct App
     std::vector<GameObject> gameObjects;
 
     // program indices
-    u32 texturedGeometryProgramIdx;
-    u32 texturedMeshProgramIdx;
+    //u32 texturedGeometryProgramIdx;
+    u32 ForwardShadingIdx;
+    u32 DeferredGeometryIdx;
+    u32 DeferredLightingIdx;
+    u32 ShadedProgramIdx;
 
     // texture indices
     u32 diceTexIdx;
