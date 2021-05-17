@@ -290,7 +290,7 @@ struct Light
 #if defined(VERTEX)
 
 layout(location = 0) in vec3 aPosition;
-layout(location = 2) in vec2 aTexCoord;
+layout(location = 1) in vec2 aTexCoord;
 
 layout(binding = 0, std140) uniform GlobalParams
 {
@@ -364,31 +364,31 @@ void main()
 
 	vec3 diffuseColor;
 	vec3 specularColor;
-	/*
+	
 	for(int i = 0; i < uLightCount; ++i)
 	{
 	    float attenuation = 0.3f;
 		
-		// If it is a point light, attenuate according to distance
+		 //If it is a point light, attenuate according to distance
 		if(uLight[i].type == 1)
 			attenuation = 2.0 / length(uLight[i].position - position);
 	        
-	    vec3 L = normalize(uLight[i].direction - viewDir); // Light direction
+	    vec3 L = normalize(uLight[i].direction - viewDir);  //Light direction
 		
 
 
-	    vec3 R = reflect(-L, N); // reflected vector
+	    vec3 R = reflect(-L, N);  //reflected vector
 	    
-	    // Diffuse
+	     //Diffuse
 	    float diffuseIntensity = max(0.0, dot(N, L));
 	    diffuseColor += attenuation * albedo.xyz * uLight[i].color * diffuseIntensity;
 	    
-	    // Specular
+	     //Specular
 	    float specularIntensity = pow(max(dot(R, V), 0.0), shininess);
 	    specularColor += attenuation * specular * uLight[i].color * specularIntensity;
-	}*/
+	}
 
-	oColor = vec4(ambientColor/* + diffuseColor + specularColor*/, 1.0);
+	oColor = vec4(ambientColor + diffuseColor + specularColor, 1.0);
 
 }
 
