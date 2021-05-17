@@ -110,11 +110,12 @@ layout(location = 0) out vec4 oColor;
 layout(location = 1) out vec4 oNormals;
 layout(location = 2) out vec4 oAlbedo;
 layout(location = 3) out vec4 oDepth;
+layout(location = 4) out vec4 oPosition;
 
 float near = 0.1; 
 float far  = 100.0;
 
-float LinearizeDepth(float depth) 
+float DepthCalc(float depth) 
 {
     float z = depth * 2.0 - 1.0; // back to NDC 
     return (2.0 * near * far) / (far + near - z * (far - near));	
@@ -162,8 +163,10 @@ void main()
 	oNormals = vec4(normalize(vNormal), 1.0); 
 	oAlbedo = texture(uTexture, vTexCoord);
 
-	float depth = LinearizeDepth(gl_FragCoord.z) / far; // divide by far for demonstration
+	float depth = DepthCalc(gl_FragCoord.z) / far; // divide by far for demonstration
 	oDepth = vec4(vec3(depth), 1.0);
+
+	oPosition = vec4(vPosition, 1.0);
 }
 
 #endif
@@ -241,16 +244,15 @@ layout(binding = 0, std140) uniform GlobalParams
 	Light uLight[16];
 };
 
-layout(location = 0) out vec4 oColor;
-layout(location = 1) out vec4 oNormals;
-layout(location = 2) out vec4 oAlbedo;
-layout(location = 3) out vec4 oDepth;
-layout(location = 4) out vec4 oPosition;
+layout(location = 0) out vec4 oNormals;
+layout(location = 1) out vec4 oAlbedo;
+layout(location = 2) out vec4 oDepth;
+layout(location = 3) out vec4 oPosition;
 
 float near = 0.1; 
 float far  = 100.0;
 
-float LinearizeDepth(float depth) 
+float DepthCalc(float depth) 
 {
     float z = depth * 2.0 - 1.0; 
     return (2.0 * near * far) / (far + near - z * (far - near));	
@@ -258,13 +260,134 @@ float LinearizeDepth(float depth)
 
 void main()
 {
-	oColor = texture(uTexture, vTexCoord);
 	oPosition = vec4(vPosition,1.0);
 	oNormals = vec4(normalize(vNormal), 1.0); 
 	oAlbedo = texture(uTexture, vTexCoord);
 
-	float depth = LinearizeDepth(gl_FragCoord.z) / far; 
+	float depth = DepthCalc(gl_FragCoord.z) / far; 
 	oDepth = vec4(vec3(depth), 1.0);
+
+}
+
+#endif
+#endif
+
+//---------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------
+
+#ifdef Mode_DeferredLighting
+
+struct Light
+{
+    unsigned int    type;
+    vec3            color;
+    vec3            direction;
+    vec3            position;
+};
+
+#if defined(VERTEX)
+
+layout(location = 0) in vec3 aPosition;
+layout(location = 2) in vec2 aTexCoord;
+
+layout(binding = 0, std140) uniform GlobalParams
+{
+    vec3            uCameraPosition;
+    unsigned int    uLightCount;
+    Light           uLight[16];
+};
+
+layout(binding = 1, std140) uniform LocalParams
+{
+    mat4        model;
+    mat4        view;
+    mat4        projection;
+};
+
+out vec2 vTexCoord;
+out vec3 vPosition; // In World space
+
+void main()
+{
+    vTexCoord = aTexCoord;
+    vPosition = projection * view * model * vec4(aPosition, 1.0);
+    gl_Position =  vec4(aPosition, 1.0);
+}
+
+#elif defined(FRAGMENT) //------------------------------------------
+
+struct Light
+{
+	unsigned int type;
+	vec3 color;
+	vec3 direction;
+	vec3 position;
+};
+
+in vec2 vTexCoord;
+in vec3 vPosition; // in worldspace
+
+uniform sampler2D oNormals;
+uniform sampler2D oAlbedo;
+uniform sampler2D oDepth;
+uniform sampler2D oPosition;
+
+layout(binding = 0, std140) uniform GlobalParams
+{
+	vec3 uCameraPosition;
+	unsigned int uLightCount;
+	Light uLight[16];
+};
+
+layout(location = 0) out vec4 oColor;
+
+void main()
+{
+	// G buffer
+	vec3 position = texture(oPosition, vTexCoord).rgb;
+	vec3 Normal = texture(oNormals, vTexCoord).rgb;
+	vec3 albedo = texture(oAlbedo, vTexCoord).rgb;
+	vec3 viewDir = normalize(vPosition - position);
+
+	// Mat parameters
+    vec3 specular = vec3(1.0);	// color reflected by mat
+    float shininess = 1.0;		// how strong specular reflections are (more shininess harder and smaller spec)
+
+	// Ambient
+    float ambientIntensity = 0.5;
+    vec3 ambientColor = albedo.xyz * ambientIntensity;
+
+    vec3 N = normalize(Normal);		// normal
+	vec3 V = normalize(-viewDir);	// direction from pixel to camera
+
+	vec3 diffuseColor;
+	vec3 specularColor;
+
+	for(int i = 0; i < uLightCount; ++i)
+	{
+	    float attenuation = 0.3f;
+		
+		// If it is a point light, attenuate according to distance
+		if(uLight[i].type == 1)
+			attenuation = 2.0 / length(uLight[i].position - position);
+	        
+	    vec3 L = normalize(uLight[i].direction - viewDir); // Light direction
+		
+
+
+	    vec3 R = reflect(-L, N); // reflected vector
+	    
+	    // Diffuse
+	    float diffuseIntensity = max(0.0, dot(N, L));
+	    diffuseColor += attenuation * albedo.xyz * uLight[i].color * diffuseIntensity;
+	    
+	    // Specular
+	    float specularIntensity = pow(max(dot(R, V), 0.0), shininess);
+	    specularColor += attenuation * specular * uLight[i].color * specularIntensity;
+	}
+
+	oColor = vec4(ambientColor + diffuseColor + specularColor, 1.0);
 
 }
 

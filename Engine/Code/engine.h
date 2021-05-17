@@ -308,6 +308,10 @@ struct App
     const char* rmodes[5] = { "color","depth","albedo","normals", "position" };
     int selectedmode = 0;
 
+    //deferred quad info
+    unsigned int quadVAO = 0;
+    unsigned int quadVBO;
+
 };
 
 void Init(App* app);
@@ -329,6 +333,10 @@ glm::mat4 TransformScale(const vec3& scaleFactors);
 glm::mat4 TransformPositionScale(const vec3& pos,const vec3& scaleFactors);
 
 void FrameBufferObject(App* app);
+
+void DeferredGeometryPass(App * app);
+
+void DeferredShadingPass(App * app);
 
 
 
