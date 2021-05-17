@@ -306,7 +306,11 @@ struct App
 
     //imgui stuff
     const char* rmodes[5] = { "color","depth","albedo","normals", "position" };
+    int selectedmodes = 0;
+
+    const char* rmode[2] = { "Deferred Shading","Forward Shading" };
     int selectedmode = 0;
+
 
     //deferred quad info
     unsigned int quadVAO = 0;

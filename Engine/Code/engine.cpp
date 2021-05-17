@@ -557,8 +557,11 @@ void Gui(App* app)
 
     bool active = true;
     ImGui::Begin("Scene", &active, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-    ImGui::Combo("Render Mode", &app->selectedmode, app->rmodes, IM_ARRAYSIZE(app->rmodes));
-    switch (app->selectedmode)
+    ImGui::PushItemWidth(400);
+    ImGui::Combo("Render Type", &app->selectedmodes, app->rmodes, IM_ARRAYSIZE(app->rmodes));
+    //ImGui::SameLine();
+    ImGui::Combo("Render Mode", &app->selectedmode, app->rmode, IM_ARRAYSIZE(app->rmode));
+    switch (app->selectedmodes)
     {
     case 0:
         app->modes = Modes::Mode_Color;
@@ -599,6 +602,17 @@ void Gui(App* app)
         break;
 
     }
+    switch (app->selectedmode)
+    {
+    case 0:
+        app->mode = Mode::Mode_DeferredShading;
+        break;
+    case 1:
+        app->mode = Mode::Mode_ForwardShading;
+        break;
+    }
+
+
     //ImGui::Image((void*)app->colorTexHandle, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
     ImGui::End();
 
