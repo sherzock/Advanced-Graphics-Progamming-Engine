@@ -353,14 +353,14 @@ void main()
 
 	// Mat parameters
     vec3 specular = vec3(1.0);	// color reflected by mat
-    float shininess = 1.0;		// how strong specular reflections are (more shininess harder and smaller spec)
+    float shininess = 40.0;		// how strong specular reflections are (more shininess harder and smaller spec)
 
 	// Ambient
     float ambientIntensity = 0.5;
     vec3 ambientColor = albedo.xyz * ambientIntensity;
 
     vec3 N = normalize(Normal);		// normal
-	vec3 V = normalize(-viewDir);	// direction from pixel to camera
+	vec3 V = normalize(viewDir);	// direction from pixel to camera
 
 	vec3 diffuseColor;
 	vec3 specularColor;
@@ -368,12 +368,20 @@ void main()
 	for(int i = 0; i < uLightCount; ++i)
 	{
 	    float attenuation = 0.3f;
-		
+		vec3 L = vec3(0.);
+
 		 //If it is a point light, attenuate according to distance
 		if(uLight[i].type == 1)
+		{
 			attenuation = 2.0 / length(uLight[i].position - position);
+			L = normalize(uLight[i].position - position);  //Light direction
+
+		}
+		else
+		{
+			L = normalize(uLight[i].direction);  //Light direction
+		}
 	        
-	    vec3 L = normalize(uLight[i].direction - viewDir);  //Light direction
 		
 
 
