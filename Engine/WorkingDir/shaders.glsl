@@ -258,6 +258,7 @@ float LinearizeDepth(float depth)
 
 void main()
 {
+	oColor = texture(uTexture, vTexCoord);
 	oPosition = vec4(normalize(vPosition,1.0));
 	oNormals = vec4(normalize(vNormal), 1.0); 
 	oAlbedo = texture(uTexture, vTexCoord);

@@ -958,9 +958,6 @@ void Render(App* app)
         break;
         case Mode_DeferredShading:
         {
-            //Render Init
-
-            //Create openglgroup for debugging
             glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Deferred Shading");
 
             //Render on this framebuffer render targets
@@ -975,11 +972,10 @@ void Render(App* app)
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 
-            //1: Geometry pass
-            Program& deferredGeo = app->programs[app->DeferredGeometryIdx];
-            glUseProgram(deferredGeo.handle);
+            // Bind the program
+            Program& GeoDeferredShadingProgram = app->programs[app->DeferredGeometryIdx];
+            glUseProgram(GeoDeferredShadingProgram.handle);
 
-            
             for (int i = 0; i < app->entities.size(); ++i)
             {
 
@@ -994,9 +990,10 @@ void Render(App* app)
 
                 for (u32 i = 0; i < mesh.submeshes.size(); ++i)
                 {
-                    GLuint vao = FindVAO(mesh, i, deferredGeo);
+                    GLuint vao = FindVAO(mesh, i, GeoDeferredShadingProgram);
                     glBindVertexArray(vao);
 
+                    //HERE
                     if (model.materialIdx.size() != 0) {
                         u32 submeshMaterialIdx = model.materialIdx[i];
                         Material& submeshMaterial = app->materials[submeshMaterialIdx];
@@ -1012,21 +1009,10 @@ void Render(App* app)
                 }
 
             }
-            
-            //2: Shading pass
- /*           glEnable(GL_DEPTH_TEST);
-            glDepthMask(GL_FALSE);
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_ONE, GL_ONE);*/
 
 
-
-
-            
-            
-            
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glPopDebugGroup();
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
         break;
         
