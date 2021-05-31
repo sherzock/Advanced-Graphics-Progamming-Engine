@@ -749,7 +749,7 @@ void CreateHierarchy(App* app, GameObject* parent) {
 
 
 // -----------------------------------------------------------------
-void Look(Camera c, const vec3& Position, const vec3& Reference/*, bool RotateAroundReference*/)
+void Look(Camera c, const vec3& Position, const vec3& Reference)
 {
     c.position = Position;
     c.reference = Reference;
@@ -801,30 +801,36 @@ void Update(App* app)
         int dx = -app->input.mouseDelta.x;
         int dy = -app->input.mouseDelta.y;
 
+        if (dx != 0 || dy != 0)
+            printf("");
+        //LookAt
+        c.forward = glm::normalize(c.position - c.reference);
+        glm::vec3 up = vec3(0, 1, 0);
+        c.right = glm::normalize(glm::cross(up, c.forward));
+        c.up = glm::cross(c.forward, c.right);
+
+        c.reference = glm::vec3(0, -4.50, 0);
         vec3 vect = c.position - c.reference;
-
-        c.up = glm::cross(c.right, c.forward);
-
         glm::quat quat_y(c.up.x, c.up.y, c.up.z, dx * 0.005);
         glm::quat quat_x(c.right.x, c.right.y, c.right.z, dy * 0.005);
 
-        vect = glm::rotate(quat_x, vect);//quat_x.Transform(vect);
+        vect = glm::rotate(quat_x, vect);
         vect = glm::rotate(quat_y, vect);
-
         c.position = vect + c.reference;
-        LookAt(c, c.reference);
+        
     }
 
     if (app->input.mouseButtons[RIGHT] == BUTTON_PRESSED)
     {
         c.y += app->input.mouseDelta.x * TAU / 360.0f;
         c.p -= app->input.mouseDelta.y * TAU / 360.0f;
+
+        c.y = glm::mod(c.y, TAU);
+        c.p = glm::clamp(c.p, -PI / 2.1f, PI / 2.1f);
+        c.forward = glm::vec3(cosf(c.p) * sinf(c.y), sinf(c.p), -cosf(c.p) * cosf(c.y));
+        c.right = glm::vec3(cosf(c.y), 0.0f, sinf(c.y));
     }
     
-    c.y = glm::mod(c.y, TAU);
-    c.p = glm::clamp(c.p, -PI / 2.1f, PI / 2.1f);
-    c.forward = glm::vec3(cosf(c.p) * sinf(c.y), sinf(c.p), -cosf(c.p) * cosf(c.y));
-    c.right = glm::vec3(cosf(c.y), 0.0f, sinf(c.y));
 
     bool acc = false;
     
@@ -861,11 +867,11 @@ void Update(App* app)
 
     c.position += c.speed * app->deltaTime;
 
-    glm::vec3 upVector = glm::vec3(0.0f, 1.0f, 0.0f);
+    //glm::vec3 upVector = glm::vec3(0.0f, 1.0f, 0.0f);
     float aspectRatio = (float)app->displaySize.x / (float)app->displaySize.y;
     
     app->projection = glm::perspective(glm::radians(60.0f), aspectRatio, 0.1f, 1000.0f);
-    app->view = glm::lookAt(c.position, c.position + c.forward, upVector);
+    app->view = glm::lookAt(c.position, c.position + c.forward, c.up);
     app->modl = glm::mat4(1.0f);
 
     //Uniform Buffer update
