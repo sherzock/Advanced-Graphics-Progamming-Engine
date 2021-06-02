@@ -7,6 +7,10 @@
 #include "platform.h"
 #include <glad/glad.h>
 
+#define MIPMAP_BASE_LEVEL 0
+#define MIPMAP_MAX_LEVEL 4
+
+
 typedef glm::vec2  vec2;
 typedef glm::vec3  vec3;
 typedef glm::quat  quat;
@@ -34,6 +38,9 @@ enum Mode
     /*Mode_TexturedQuad,*/
     Mode_ForwardShading,
     Mode_DeferredShading,
+    Mode_BrightestPixels,
+    Mode_Blur,
+    Mode_Bloom,
     Mode_Count
 };
 enum Modes
@@ -223,6 +230,7 @@ struct App
     // Loop
     f32  deltaTime;
     bool isRunning;
+    bool renderBloom = false;
 
     // Input
     Input input;
@@ -248,6 +256,9 @@ struct App
     u32 ForwardShadingIdx;
     u32 DeferredGeometryIdx;
     u32 DeferredLightingIdx;
+    u32 blitBrightestPixelsProgramIdx;
+    u32 blurIdx;
+    u32 bloomIdx;
 
     // texture indices
     u32 diceTexIdx;
@@ -293,6 +304,12 @@ struct App
 
     //Framebuffer
     GLuint framebufferHandle;
+    GLuint fboBloom1;
+    GLuint fboBloom2;
+    GLuint fboBloom3;
+    GLuint fboBloom4;
+    GLuint fboBloom5;
+
 
     //framebuffer Attachments
     GLuint depthAttachmentHandle;
@@ -301,6 +318,8 @@ struct App
     GLuint albedoTexhandle;
     GLuint depthTexhandle;
     GLuint positionTexhandle;
+    GLuint rtBright;
+    GLuint rtBloomH;
 
     glm::vec3 vposition;
     glm::vec3 vrotation;
@@ -327,6 +346,14 @@ void Gui(App* app);
 void Update(App* app);
 
 void Render(App* app);
+
+void RenderBloom(App* app);
+
+void passBlitBrightPixels(App* app, GLuint& fbo, const vec2& size, GLenum attachment, GLuint& inputTexture, GLint LOD, float threshold);
+
+void passBlur(App* app, GLuint& handle, vec2 size, int attachment, GLuint& inputTexture, int LOD, vec2 orientation);
+
+void passBloom(App* app, GLuint& handle, int attachment, GLuint& inputTexture, int LOD);
 
 void GetTrasform(App* app, glm::mat4 matrix);
 

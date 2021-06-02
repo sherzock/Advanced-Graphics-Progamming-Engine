@@ -267,7 +267,6 @@ void main()
 
 	float depth = DepthCalc(gl_FragCoord.z) / far; 
 	oDepth = vec4(vec3(depth), 1.0);
-
 }
 
 #endif
@@ -381,9 +380,6 @@ void main()
 		{
 			L = normalize(uLight[i].direction);  //Light direction
 		}
-	        
-		
-
 
 	    vec3 R = reflect(-L, N);  //reflected vector
 	    
@@ -402,3 +398,32 @@ void main()
 
 #endif
 #endif
+
+//---------------------------------------------------
+
+#ifdef Mode_BrightestPixels
+
+if defined(FRAGMENT) //------------------------------------------
+
+in vec2 vTexCoord;
+
+uniform sampler2D colorTexture;
+
+layout(location = 0) out vec4 oColor;
+
+void main()
+{
+	vec4 color = texture(colorTexture, vTexCoord);
+	float intensity = dot(color.rgb, vec3(0.21, 0.71, 0.08);
+	float threshold = 1.0;
+	float threshold1 = threshold;
+	float threshold2 = threshold + 0.1;
+
+	oColor = color; /** smoothstep(threshold1, threshold1, intensity)*/
+}
+
+#endif
+
+
+
+
