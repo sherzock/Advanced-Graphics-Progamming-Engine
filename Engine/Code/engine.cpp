@@ -667,6 +667,7 @@ void Gui(App* app)
 
     case Modes::Mode_Normal:
         ImGui::Image((void*)app->normalTexhandle, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
+        //ImGui::Image((void*)app->rtBloomH, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
         break;
 
     case Modes::Mode_Albedo:
@@ -677,8 +678,8 @@ void Gui(App* app)
         ImGui::Image((void*)app->depthTexhandle, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
         break;
     case Modes::Mode_Position:
-        ImGui::Image((void*)app->rtBright, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
-        //ImGui::Image((void*)app->positionTexhandle, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
+        //ImGui::Image((void*)app->rtBright, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
+        ImGui::Image((void*)app->positionTexhandle, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
         break;
     }
     switch (app->selectedmode)
@@ -766,8 +767,12 @@ void Gui(App* app)
     ImGui::NewLine();
     ImGui::Checkbox("Active Bloom", &app->renderBloom);
     ImGui::DragFloat("Threshold", &app->threshold, 0.01, 0, 1);
-    ImGui::DragFloat("Kernel Radius", &app->kernelRadius, 0.01, 0, 1);
-
+    ImGui::DragInt("Kernel Radius", &app->kernelRadius, 0.1, 0, 50);
+    ImGui::SliderFloat("LOD0 Intensity", &app->LOD0, 0, 2);
+    ImGui::SliderFloat("LOD1 Intensity", &app->LOD1, 0, 2);
+    ImGui::SliderFloat("LOD2 Intensity", &app->LOD2, 0, 2);
+    ImGui::SliderFloat("LOD3 Intensity", &app->LOD3, 0, 2);
+    ImGui::SliderFloat("LOD4 Intensity", &app->LOD4, 0, 2);
 
     ImGui::End();
 
@@ -1261,8 +1266,10 @@ void RenderBloom(App* app) {
     passBlur(app, app->fboBloom5, vec2(w / 32, h / 32), GL_COLOR_ATTACHMENT0, app->rtBloomH, LOD(4), vertical);
     
     //Apply Blurred Pixels on top of Original
-    //passBloom(app, app->framebufferHandle, GL_COLOR_ATTACHMENT0, app->rtBloomH, 5);
+    passBloom(app, app->framebufferHandle, GL_COLOR_ATTACHMENT0, app->rtBloomH, 5);
 
+    glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+    glBindTexture(GL_TEXTURE_2D, 0);
 #undef LOD
     glPopDebugGroup();
 }
@@ -1299,8 +1306,8 @@ void passBlitBrightPixels(App* app, GLuint& fbo, const vec2& size, GLenum attach
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void passBlur(App* app, GLuint& fbo, const vec2& size, int attachment, GLuint& inputTexture, int LOD, vec2 orientation) {
-    
+void passBlur(App* app, GLuint& fbo, const vec2& size, GLenum attachment, GLuint& inputTexture, int LOD, vec2 orientation) {
+
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     glDrawBuffer(attachment);
     glViewport(0, 0, size.x, size.y);
@@ -1314,9 +1321,9 @@ void passBlur(App* app, GLuint& fbo, const vec2& size, int attachment, GLuint& i
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, inputTexture);
     glUniform1i(glGetUniformLocation(BlurProgram.handle, "colorMap"), 0);
+    glUniform2i(glGetUniformLocation(BlurProgram.handle, "direction"), orientation.x, orientation.y);
     glUniform1i(glGetUniformLocation(BlurProgram.handle, "inputLod"), LOD);
     glUniform1i(glGetUniformLocation(BlurProgram.handle, "kernelRadius"), app->kernelRadius);
-    glUniform2i(glGetUniformLocation(BlurProgram.handle, "direction"), orientation.x, orientation.y);
 
     //DRAW Quad
     glBindVertexArray(app->quadVAO);
@@ -1325,11 +1332,9 @@ void passBlur(App* app, GLuint& fbo, const vec2& size, int attachment, GLuint& i
 
     glUseProgram(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glEnable(GL_DEPTH_TEST);
 }
 
-void passBloom(App* app, GLuint& fbo, int attachment, GLuint& inputTexture, int LOD) {
+void passBloom(App* app, GLuint& fbo, GLenum attachment, GLuint& inputTexture, int LOD) {
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     glDrawBuffer(attachment);
     glViewport(0, 0, app->displaySize.x, app->displaySize.y);
@@ -1344,12 +1349,12 @@ void passBloom(App* app, GLuint& fbo, int attachment, GLuint& inputTexture, int 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, inputTexture);
     glUniform1i(glGetUniformLocation(BloomProgram.handle, "colorMap"), 0);
-    glUniform1i(glGetUniformLocation(BloomProgram.handle, "maxLod"), LOD);
-    glUniform1i(glGetUniformLocation(BloomProgram.handle, "lodI0"), app->lodIntensity0);
-    glUniform1i(glGetUniformLocation(BloomProgram.handle, "lodI1"), app->lodIntensity1);
-    glUniform1i(glGetUniformLocation(BloomProgram.handle, "lodI2"), app->lodIntensity2);
-    glUniform1i(glGetUniformLocation(BloomProgram.handle, "lodI3"), app->lodIntensity3);
-    glUniform1i(glGetUniformLocation(BloomProgram.handle, "lodI4"), app->lodIntensity4);
+    glUniform1i(glGetUniformLocation(BloomProgram.handle, "maxLOD"), LOD);
+    glUniform1f(glGetUniformLocation(BloomProgram.handle, "LOD0"), app->LOD0);
+    glUniform1f(glGetUniformLocation(BloomProgram.handle, "LOD1"), app->LOD1);
+    glUniform1f(glGetUniformLocation(BloomProgram.handle, "LOD2"), app->LOD2);
+    glUniform1f(glGetUniformLocation(BloomProgram.handle, "LOD3"), app->LOD3);
+    glUniform1f(glGetUniformLocation(BloomProgram.handle, "LOD4"), app->LOD4);
 
     //DRAW Quad
     glBindVertexArray(app->quadVAO);
