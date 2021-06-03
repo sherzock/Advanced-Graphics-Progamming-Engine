@@ -1029,7 +1029,7 @@ void Update(App* app)
 void DeferredGeometryPass(App * app)
 {
     // Clear the framebuffer
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
 
@@ -1039,7 +1039,7 @@ void DeferredGeometryPass(App * app)
     glDrawBuffers(ARRAY_COUNT(drawbuffers), drawbuffers);
 
     // Clear the framebuffer
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 
@@ -1133,12 +1133,12 @@ void Render(App* app)
 
     glBindFramebuffer(GL_FRAMEBUFFER, app->fboBloom1);
     glDrawBuffers(ARRAY_COUNT(drawBBuffers), drawBBuffers);
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Clear the framebuffer
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
