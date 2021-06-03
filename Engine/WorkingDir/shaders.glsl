@@ -402,26 +402,37 @@ void main()
 //---------------------------------------------------
 
 #ifdef Mode_BrightestPixels
+#if defined(VERTEX)
 
-if defined(FRAGMENT) //------------------------------------------
+layout(location = 0) in vec3 aPosition;
+layout(location = 1) in vec2 aTexCoord;
 
-in vec2 vTexCoord;
+out vec2 vTexCoord;
+
+void main()
+{
+    vTexCoord = aTexCoord;
+    gl_Position = vec4(aPosition, 1.0);
+}
+
+#elif defined(FRAGMENT) //------------------------------------------
 
 uniform sampler2D colorTexture;
-
-layout(location = 0) out vec4 oColor;
+uniform float threshold;
+in vec2 vTexCoord;
+out vec4 oColor;
 
 void main()
 {
 	vec4 color = texture(colorTexture, vTexCoord);
-	float intensity = dot(color.rgb, vec3(0.21, 0.71, 0.08);
-	float threshold = 1.0;
+	float intensity = dot(color.rgb, vec3(0.21, 0.71, 0.08));
+	
 	float threshold1 = threshold;
-	float threshold2 = threshold + 0.1;
-
-	oColor = color; /** smoothstep(threshold1, threshold1, intensity)*/
+	//float threshold2 = threshold + 0.1;
+    oColor = color ;//* smoothstep(threshold1, threshold2, intensity)
 }
 
+#endif
 #endif
 
 

@@ -424,7 +424,8 @@ void FrameBufferObject(App* app)
     glTexImage2D(GL_TEXTURE_2D, 2, GL_RGBA16F, app->displaySize.x / 8, app->displaySize.y / 8, 0, GL_RGBA, GL_FLOAT, NULL);
     glTexImage2D(GL_TEXTURE_2D, 3, GL_RGBA16F, app->displaySize.x / 16, app->displaySize.y / 16, 0, GL_RGBA, GL_FLOAT, NULL);
     glTexImage2D(GL_TEXTURE_2D, 4, GL_RGBA16F, app->displaySize.x / 32, app->displaySize.y / 32, 0, GL_RGBA, GL_FLOAT, NULL);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    glGenerateMipmap(GL_TEXTURE_2D); 
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     if (app->rtBloomH != 0) glDeleteTextures(1, &app->rtBloomH);
     glGenFramebuffers(1, &app->rtBloomH);
@@ -440,7 +441,8 @@ void FrameBufferObject(App* app)
     glTexImage2D(GL_TEXTURE_2D, 2, GL_RGBA16F, app->displaySize.x / 8, app->displaySize.y / 8, 0, GL_RGBA, GL_FLOAT, NULL);
     glTexImage2D(GL_TEXTURE_2D, 3, GL_RGBA16F, app->displaySize.x / 16, app->displaySize.y / 16, 0, GL_RGBA, GL_FLOAT, NULL);
     glTexImage2D(GL_TEXTURE_2D, 4, GL_RGBA16F, app->displaySize.x / 32, app->displaySize.y / 32, 0, GL_RGBA, GL_FLOAT, NULL);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    glGenerateMipmap(GL_TEXTURE_2D); 
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     //Bloom FrameBuffer
     BufferBloomInit(app, app->fboBloom1, 0);
@@ -594,7 +596,7 @@ void Init(App* app)
     Light light1;
     light1.type = LightType::LightType_Directional;
     light1.direction = vec3(0.0, 1.0, 0.0);
-    light1.color = vec3(0.0, 0.156, 1.0);
+    light1.color = vec3(1.0, 1.0, 1.0);
     light1.position = vec3(0.0, 5.0, 0.0);
     light1.id = ++id;
     app->lights.push_back(light1);
@@ -603,7 +605,7 @@ void Init(App* app)
     Light light2;
     light2.type = LightType::LightType_Point;
     light2.direction = vec3(50.0, 0.0, 0.0);
-    light2.color = vec3(0.982, 0.306, 0.306);
+    light2.color = vec3(1.0, 1.0, 1.0);
     light2.position = vec3(-1.0, 1.0, -1.5);
     light2.id = ++id;
     app->lights.push_back(light2);
@@ -612,8 +614,8 @@ void Init(App* app)
     Light light3;
     light3.type = LightType::LightType_Point;
     light3.direction = vec3(-50.0, 0.0, 0.0);
-    light3.color = vec3(0.132, 1.0, 0.0);
-    light3.position = vec3(1.2, 1.1, 3.6);
+    light3.color = vec3(1.0, 1.0, 1.0);
+    light3.position = vec3(1.2, 1.1, 1.0);
     light3.id = ++id;
     app->lights.push_back(light3);
     app->gameObjects.push_back(GameObject("Point2", id, app->lights.size() - 1, GOType::LIGHT));
@@ -1114,6 +1116,18 @@ void DeferredShadingPass(App * app)
 
 void Render(App* app)
 {
+    GLuint drawBBuffers[] =
+    {
+        GL_COLOR_ATTACHMENT0,
+        GL_COLOR_ATTACHMENT1,
+    };
+
+    glBindFramebuffer(GL_FRAMEBUFFER, app->fboBloom1);
+    glDrawBuffers(ARRAY_COUNT(drawBBuffers), drawBBuffers);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
     // Clear the framebuffer
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1207,6 +1221,8 @@ void Render(App* app)
     break;
     }
 
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
     if (app->renderBloom) RenderBloom(app);
 }
 
@@ -1222,7 +1238,7 @@ void RenderBloom(App* app) {
     //Copy Bright Pixels
     //app->colorTexHandle == deferred texture resultant
 
-    float threshold = 1.0;
+    float threshold = 0.5f;
     passBlitBrightPixels(app, app->fboBloom1, vec2(w / 2, h / 2), GL_COLOR_ATTACHMENT0, app->colorTexHandle, LOD(0), threshold);
     glBindTexture(GL_TEXTURE_2D, app->rtBright);
     glGenerateMipmap(GL_TEXTURE_2D);
@@ -1256,8 +1272,6 @@ void passBlitBrightPixels(App* app, GLuint& fbo, const vec2& size, GLenum attach
     glDrawBuffer(attachment);
 
     // Clear the framebuffer
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, size.x, size.y);
 
     Program& BrightestPixelsProgram = app->programs[app->blitBrightestPixelsProgramIdx];
@@ -1267,17 +1281,20 @@ void passBlitBrightPixels(App* app, GLuint& fbo, const vec2& size, GLenum attach
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, inputTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glUniform1i(glGetUniformLocation(fbo, "colorTexture"), 0);
+    glUniform1i(glGetUniformLocation(BrightestPixelsProgram.handle, "colorTexture"), 0);
 
-    //DRAW
+    GLint loc = glGetUniformLocation(BrightestPixelsProgram.handle, "threshold");
+    glUniform1f(glGetUniformLocation(BrightestPixelsProgram.handle, "threshold"), threshold);
+
+    //DRAW Quad
     glBindVertexArray(app->quadVAO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindVertexArray(0);
 
     //Release
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glUseProgram(0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void passBlur(App* app, GLuint& handle, vec2 size, int attachment, GLuint& inputTexture, int LOD, vec2 orientation) {
