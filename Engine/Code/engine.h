@@ -239,6 +239,15 @@ struct App
     char gpuName[64];
     char openGlVersion[64];
 
+    float threshold = 0.5f;
+    float kernelRadius = 0.5f;
+
+    float lodIntensity0;
+    float lodIntensity1;
+    float lodIntensity2;
+    float lodIntensity3;
+    float lodIntensity4;
+
     ivec2 displaySize;
     ivec2 displaySizeLastFrame;
 
@@ -351,7 +360,7 @@ void RenderBloom(App* app);
 
 void passBlitBrightPixels(App* app, GLuint& fbo, const vec2& size, GLenum attachment, GLuint& inputTexture, GLint LOD, float threshold);
 
-void passBlur(App* app, GLuint& handle, vec2 size, int attachment, GLuint& inputTexture, int LOD, vec2 orientation);
+void passBlur(App* app, GLuint& handle, const vec2& size, int attachment, GLuint& inputTexture, int LOD, vec2 orientation);
 
 void passBloom(App* app, GLuint& handle, int attachment, GLuint& inputTexture, int LOD);
 

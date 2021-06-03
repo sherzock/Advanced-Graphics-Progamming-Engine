@@ -415,21 +415,22 @@ void main()
     gl_Position = vec4(aPosition, 1.0);
 }
 
-#elif defined(FRAGMENT) //------------------------------------------
+#elif defined(FRAGMENT)
 
 uniform sampler2D colorTexture;
 uniform float threshold;
+
 in vec2 vTexCoord;
+
 out vec4 oColor;
 
 void main()
 {
 	vec4 color = texture(colorTexture, vTexCoord);
 	float intensity = dot(color.rgb, vec3(0.21, 0.71, 0.08));
-	
 	float threshold1 = threshold;
-	//float threshold2 = threshold + 0.1;
-    oColor = color ;//* smoothstep(threshold1, threshold2, intensity)
+	float threshold2 = threshold1 + 0.1;
+    oColor = color * smoothstep(threshold1, threshold2, intensity);
 }
 
 #endif
