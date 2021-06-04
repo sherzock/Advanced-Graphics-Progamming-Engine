@@ -475,7 +475,6 @@ void Init(App* app)
     camera.y = 0.0f;
     camera.p = 0.0f;
     camera.position = glm::vec3(0.0, 0.0, 10.0);
-    camera.reference = glm::vec3(0.0,0.0,0.0);
 
     //Framebuffer Init
     FrameBufferObject(app);
@@ -748,33 +747,6 @@ void CreateHierarchy(App* app, GameObject* parent) {
 }
 
 
-// -----------------------------------------------------------------
-void Look(Camera c, const vec3& Position, const vec3& Reference/*, bool RotateAroundReference*/)
-{
-    c.position = Position;
-    c.reference = Reference;
-
-    c.forward = glm::normalize(Position - Reference);
-    c.right = glm::normalize(glm::cross(vec3(0.0f, 1.0f, 0.0f), c.forward));
-    c.up = glm::cross(c.forward, c.right);
-
- /*   if (!RotateAroundReference)
-    {*/
-        //c.reference = c.position;
-        //c.position += c.forward * 0.05f;
-    /*}*/
-
-}
-
-// -----------------------------------------------------------------
-void LookAt(Camera c, const vec3& Spot)
-{
-    c.reference = Spot;
-    vec3 position = { Spot.x,Spot.y,Spot.z };
-    Look(c, position, c.reference);
-
-}
-
 void Update(App* app)
 {
     // You can handle app->input keyboard/mouse here
@@ -796,25 +768,6 @@ void Update(App* app)
     Camera& c = app->cam;
     
     
-    if (app->input.mouseButtons[LEFT] == BUTTON_PRESSED)
-    {
-        int dx = -app->input.mouseDelta.x;
-        int dy = -app->input.mouseDelta.y;
-
-        vec3 vect = c.position - c.reference;
-
-        c.up = glm::cross(c.right, c.forward);
-
-        glm::quat quat_y(c.up.x, c.up.y, c.up.z, dx * 0.005);
-        glm::quat quat_x(c.right.x, c.right.y, c.right.z, dy * 0.005);
-
-        vect = glm::rotate(quat_x, vect);//quat_x.Transform(vect);
-        vect = glm::rotate(quat_y, vect);
-
-        c.position = vect + c.reference;
-        LookAt(c, c.reference);
-    }
-
     if (app->input.mouseButtons[RIGHT] == BUTTON_PRESSED)
     {
         c.y += app->input.mouseDelta.x * TAU / 360.0f;

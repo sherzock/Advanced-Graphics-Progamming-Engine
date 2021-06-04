@@ -155,9 +155,7 @@ struct Camera
     glm::vec3 position;
     glm::vec3 forward;
     glm::vec3 right;
-    glm::vec3 up;
     glm::vec3 speed;
-    glm::vec3 reference;
 };
 
 enum class GOType
