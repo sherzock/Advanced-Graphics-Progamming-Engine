@@ -785,7 +785,6 @@ void Update(App* app)
         {
             GetTrasform(app, app->entities[app->active_gameObject->index].worldMatrix);
             c.rotationCenter = app->vposition;
-            //app->entities[app->active_gameObject->index].worldMatrix = TransformPositionRotationScale(app->vposition, (app->vrotation * 3.14159f) / 180.f, app->vscale);
         }
         else if (app->active_gameObject->type == GOType::LIGHT)
             c.rotationCenter = app->lights[app->active_gameObject->index].position;
@@ -824,27 +823,30 @@ void Update(App* app)
     c.right = glm::vec3(cosf(c.y), 0.0f, sinf(c.y));
 
     bool acc = false;
-    
-    if (app->input.keys[K_W] == BUTTON_PRESSED) 
+    if (c.cMode == CamMode::FREE)
     {
-        acc = true; c.speed += c.forward;
+
+        if (app->input.keys[K_W] == BUTTON_PRESSED)
+        {
+            acc = true; c.speed += c.forward;
+        }
+
+        if (app->input.keys[K_S] == BUTTON_PRESSED)
+        {
+            acc = true; c.speed -= c.forward;
+        }
+
+        if (app->input.keys[K_D] == BUTTON_PRESSED)
+        {
+            acc = true; c.speed += c.right;
+        }
+
+        if (app->input.keys[K_A] == BUTTON_PRESSED)
+        {
+            acc = true; c.speed -= c.right;
+        }
+
     }
-    
-    if (app->input.keys[K_S] == BUTTON_PRESSED) 
-    {
-        acc = true; c.speed -= c.forward;
-    }
-    
-    if (app->input.keys[K_D] == BUTTON_PRESSED) 
-    {
-        acc = true; c.speed += c.right;
-    }
-    
-    if (app->input.keys[K_A] == BUTTON_PRESSED) 
-    {
-        acc = true; c.speed -= c.right;
-    }
-    
     if (!acc) { c.speed *= 0.8; }
 
     if (glm::length(c.speed) > 100.0f) 
@@ -1035,53 +1037,6 @@ void Render(App* app)
 
     switch (app->mode)
     {
-        //case Mode_TexturedQuad:
-        //    {
-        //        
-        //        //Render on this framebuffer render targets
-        //        glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
-
-        //        //Select on which render targets to draw
-        //        GLuint drawbuffers[] = { app->colorTexHandle };
-        //        glDrawBuffers(ARRAY_COUNT(drawbuffers), drawbuffers);
-        //        
-        //        // Clear the framebuffer
-        //        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        //        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        //        // Set the viewport
-        //        //glViewport(0, 0, app->displaySize.x, app->displaySize.y);
-
-        //        glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Rendered Texture Quad");
-        //        // Bind the program
-        //        Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
-        //        glUseProgram(texturedGeometryProgram.handle);
-
-        //        // Bind the vao       
-        //        glBindVertexArray(app->vao);
-
-        //        // Set the blending state
-        //        glEnable(GL_BLEND);
-        //        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        //        // Bind the texture into unit 0
-        //        glActiveTexture(GL_TEXTURE0);
-
-        //        GLuint textureHandle = app->textures[app->diceTexIdx].handle;
-        //        glBindTexture(GL_TEXTURE_2D, textureHandle);
-
-        //        // Draw elements
-        //        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-
-        //        glPopDebugGroup();
-
-        //        glBindVertexArray(0);
-        //        glUseProgram(0);
-
-        //        glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
-        //    }
-          /*  break;*/
-
         case Mode_ForwardShading:
         {
             glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Forward Shading");
