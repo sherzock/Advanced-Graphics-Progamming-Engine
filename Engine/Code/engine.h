@@ -239,14 +239,14 @@ struct App
     char gpuName[64];
     char openGlVersion[64];
 
-    float threshold = 0.5f;
+    float threshold = 0.65f;
     int kernelRadius = 8.f;
 
     float LOD0 = 0.1;
     float LOD1 = 0.2;
     float LOD2 = 0.3;
-    float LOD3 = 0.8;
-    float LOD4 = 1.6;
+    float LOD3 = 0.6;
+    float LOD4 = 0.9;
 
     ivec2 displaySize;
     ivec2 displaySizeLastFrame;
