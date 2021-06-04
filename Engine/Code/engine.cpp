@@ -475,6 +475,8 @@ void Init(App* app)
     camera.y = 0.0f;
     camera.p = 0.0f;
     camera.position = glm::vec3(0.0, 0.0, 10.0);
+    camera.rotationCenter = { 0.0, 0.0, 0.0 };
+    camera.cMode = CamMode::FREE;
 
     //Framebuffer Init
     FrameBufferObject(app);
@@ -766,12 +768,54 @@ void Update(App* app)
 
     // Camera update
     Camera& c = app->cam;
-    
-    
-    if (app->input.mouseButtons[RIGHT] == BUTTON_PRESSED)
+
+
+    if (app->input.keys[K_F] == BUTTON_PRESS)
     {
-        c.y += app->input.mouseDelta.x * TAU / 360.0f;
-        c.p -= app->input.mouseDelta.y * TAU / 360.0f;
+        if (c.cMode != CamMode::FREE)
+            c.cMode = CamMode::FREE;
+        else
+            c.cMode = CamMode::ORBITAL;
+    }
+
+    if (app->last_active_gameObject != app->active_gameObject)
+    {
+
+        if (app->active_gameObject->type == GOType::ENTITY)
+        {
+            GetTrasform(app, app->entities[app->active_gameObject->index].worldMatrix);
+            c.rotationCenter = app->vposition;
+            //app->entities[app->active_gameObject->index].worldMatrix = TransformPositionRotationScale(app->vposition, (app->vrotation * 3.14159f) / 180.f, app->vscale);
+        }
+        else if (app->active_gameObject->type == GOType::LIGHT)
+            c.rotationCenter = app->lights[app->active_gameObject->index].position;
+
+        app->last_active_gameObject = app->active_gameObject;
+
+    }
+
+    if(c.cMode == CamMode::ORBITAL)
+    { 
+        if (app->input.mouseButtons[RIGHT] == BUTTON_PRESSED)
+        {
+            c.up = glm::cross(c.forward, c.right);
+
+            glm::mat4x4 rotation_matrixX = glm::rotate(-app->input.mouseDelta.x / 2 * app->deltaTime, glm::normalize(c.up));
+            glm::mat4x4 rotation_matrixY = glm::rotate(-app->input.mouseDelta.y / 2 * app->deltaTime, glm::normalize(c.right));
+            glm::mat4x4 transform = glm::translate(c.rotationCenter) * rotation_matrixX * rotation_matrixY * glm::translate(-c.rotationCenter);
+
+            c.position = glm::vec3(transform * glm::vec4(c.position, 1));
+            c.cameraReference = glm::vec3(transform * glm::vec4(c.cameraReference, 1));
+        }
+    }
+    
+    else if (c.cMode == CamMode::FREE)
+    {
+        if (app->input.mouseButtons[RIGHT] == BUTTON_PRESSED)
+        {
+            c.y += app->input.mouseDelta.x * TAU / 360.0f;
+            c.p -= app->input.mouseDelta.y * TAU / 360.0f;
+        }
     }
     
     c.y = glm::mod(c.y, TAU);
@@ -818,7 +862,14 @@ void Update(App* app)
     float aspectRatio = (float)app->displaySize.x / (float)app->displaySize.y;
     
     app->projection = glm::perspective(glm::radians(60.0f), aspectRatio, 0.1f, 1000.0f);
-    app->view = glm::lookAt(c.position, c.position + c.forward, upVector);
+    if (c.cMode == CamMode::ORBITAL)
+    {
+        app->view = glm::lookAt(c.position, c.cameraReference, upVector);
+    }
+    else if (c.cMode == CamMode::FREE)
+    {
+        app->view = glm::lookAt(c.position, c.position + c.forward, upVector);
+    }
     app->modl = glm::mat4(1.0f);
 
     //Uniform Buffer update

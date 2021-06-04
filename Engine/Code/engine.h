@@ -148,6 +148,12 @@ struct Program
     VertexShaderLayout vertexInputLayout;
 };
 
+enum CamMode
+{
+    FREE = 0,
+    ORBITAL
+};
+
 struct Camera
 {
     float y;//yaw
@@ -155,7 +161,11 @@ struct Camera
     glm::vec3 position;
     glm::vec3 forward;
     glm::vec3 right;
+    glm::vec3 up;
     glm::vec3 speed;
+    glm::vec3 cameraReference;
+    glm::vec3 rotationCenter;
+    CamMode cMode = CamMode::FREE;
 };
 
 enum class GOType
@@ -217,6 +227,7 @@ struct App
     //OpenGL info
     OpenGLInfo info;
     GameObject* active_gameObject;
+    GameObject* last_active_gameObject;
 
     // Loop
     f32  deltaTime;
