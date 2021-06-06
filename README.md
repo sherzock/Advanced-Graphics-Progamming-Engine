@@ -81,7 +81,7 @@ There you will also find other parameters you can modify for the effect, such as
 <h3>Relief Mapping</h3>
 
 To use the Relief Mapping effect you will have to toggle the checkbox you will find on top of the scene window when first opening the engine, alse you can try and modify it's
-parameters which you will find in the inspector at the right side of the engine when first opening it. thew parameters you can modify are: Bumpiness, Texture size and and the relief map steps performed.
+parameters which you will find in the inspector at the right side of the engine when first opening it. The parameters you can modify are: Bumpiness, Texture size and and the relief map steps performed.
 
 
 ![Bloom Params](webImgs/modes.png)
