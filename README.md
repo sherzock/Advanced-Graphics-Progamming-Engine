@@ -3,7 +3,8 @@
 <h2>Deferred Engine </h2>
 
 <p>Advanced Programming Project made by university students: Èric Canela and Jacobo Galofre</p>
-![alt All](webImgs/All.png)
+
+![alt All](webImgs/All.png)<br>
 
 <h2>Githubs</h2>
 
