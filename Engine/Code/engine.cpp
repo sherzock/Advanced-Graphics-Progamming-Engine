@@ -442,16 +442,18 @@ void Init(App* app)
     app->DeferredGeometryIdx = LoadProgram(app, "shaders.glsl", "Mode_DeferredGeometry");
     app->DeferredLightingIdx = LoadProgram(app, "shaders.glsl", "Mode_DeferredLighting");
 
-    //Texture Initialization
+    //Texture Initialization plane
     app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
-    app->diceTexIdx = LoadTexture2D(app, "dice.png");
-    app->blackTexIdx = LoadTexture2D(app, "color_black.png");
-    app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
-    app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
+
+    //Texture bump Init
+    app->albedobump = LoadTexture2D(app, "Bump/barrel.png");
+    app->normalbump = LoadTexture2D(app, "Bump/barrelNormal.png");
 
     //Load model patrick
     app->model = LoadModel(app, "Patrick/Patrick.obj");
     app->plane = LoadModel(app, "../WorkingDir/Plane.obj");
+    app->bump = LoadModel(app, "Bump/barrel.obj");
+
 
     //app->plane = LoadPlane(app);
 
@@ -520,6 +522,13 @@ void Init(App* app)
     app->entities.push_back(patrick3);
     app->gameObjects.push_back(GameObject("patrick3", id, app->entities.size() - 1, GOType::ENTITY, &patrick3.worldMatrix));
 
+    Entity bump1;
+    bump1.worldMatrix = TransformPositionScale({ 3.0, -2.7, 0.0 }, { 0.5,0.5,0.5 });
+    bump1.modelIndex = app->bump;
+    bump1.id = ++id;
+    app->entities.push_back(bump1);
+    app->gameObjects.push_back(GameObject("bump Barrel", id, app->entities.size() - 1, GOType::ENTITY, &bump1.worldMatrix));
+
     // lights Creation
     Light light1;
     light1.type = LightType::LightType_Directional;
@@ -555,8 +564,6 @@ void Init(App* app)
 
 void Gui(App* app)
 {
-
-
     bool active = true;
     ImGui::Begin("Scene", &active, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     ImGui::PushItemWidth(400);
@@ -972,6 +979,18 @@ void DeferredGeometryPass(App * app)
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
             glUniform1i(app->programUniformTexture, 0);
+
+            if (app->normalMap)
+            {
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, app->textures[app->normalbump].handle);
+                glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "uNormalMap"), 1);
+
+                if (app->entities[i].modelIndex == 1)
+                    glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "noNormal"), 0);
+                else
+                    glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "noNormal"), 1);
+            }
 
             // Draw elements
             Submesh& submesh = mesh.submeshes[i];

@@ -191,6 +191,8 @@ struct Light
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec2 aTexCoord;
+layout(location = 3) in vec3 aTangent;
+layout(location = 4) in vec3 aBitangent;
 
 layout(binding = 0, std140) uniform GlobalParams
 {
@@ -210,6 +212,8 @@ out vec2 vTexCoord;
 out vec3 vPosition; // In World space
 out vec3 vNormal;   // In World space
 out vec3 vViewDir;  // In World space
+out vec3 vTangent;	
+out vec3 vBitangent;
 
 void main()
 {
@@ -217,6 +221,8 @@ void main()
     vPosition = vec3(model* vec4(aPosition, 1.0));
     vNormal = vec3(model * vec4(aNormal, 0.0));
     vViewDir = uCameraPosition - vPosition;
+	vTangent = normalize(vec3(model * vec4(aTangent, 0.0)));
+    vBitangent = normalize(vec3(model * vec4(aBitangent, 0.0)));
     gl_Position = projection * view * model * vec4(aPosition, 1.0);
 }
 
@@ -234,8 +240,13 @@ in vec2 vTexCoord;
 in vec3 vPosition; // in worldspace
 in vec3 vNormal; // in worldspace
 in vec3 uViewDir; // in worldspace
+in vec3 vTangent;
+in vec3 vBitangent;
 
 uniform sampler2D uTexture;
+uniform sampler2D uNormalTex;
+uniform int noNormal;
+
 
 layout(binding = 0, std140) uniform GlobalParams
 {
@@ -262,8 +273,22 @@ float DepthCalc(float depth)
 void main()
 {
 	oPosition = vec4(vPosition,1.0);
-	oNormals = vec4(normalize(vNormal), 1.0); 
+	//oNormals = vec4(normalize(vNormal), 1.0); 
 	oAlbedo = texture(uTexture, vTexCoord);
+
+	vec3 T = normalize(vTangent);
+	vec3 B = normalize(vBitangent);
+    vec3 N = normalize(vNormal);
+
+	if (noNormal == 0.0)
+	{
+		 //Convert normal from tangent space to world space
+		mat3 TBN = mat3(T, B, N);	
+		vec3 tangentSpaceNormal = texture(uNormalTex, vTexCoord).xyz * 2.0 - vec3(1.0);
+		N = TBN * tangentSpaceNormal;
+	}
+
+	oNormals = vec4(N, 1.0);
 
 	float depth = DepthCalc(gl_FragCoord.z) / far; 
 	oDepth = vec4(vec3(depth), 1.0);

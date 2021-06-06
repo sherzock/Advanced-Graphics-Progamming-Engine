@@ -229,6 +229,8 @@ struct App
     GameObject* active_gameObject;
     GameObject* last_active_gameObject;
 
+    bool normalMap = true;
+
     // Loop
     f32  deltaTime;
     bool isRunning;
@@ -258,16 +260,17 @@ struct App
     u32 DeferredGeometryIdx;
     u32 DeferredLightingIdx;
 
-    // texture indices
-    u32 diceTexIdx;
+    // texture plane
     u32 whiteTexIdx;
-    u32 blackTexIdx;
-    u32 normalTexIdx;
-    u32 magentaTexIdx;
+    
+    //texture bump
+    u32 albedobump;
+    u32 normalbump;
 
     // Model indices
     u32 model;
     u32 plane;
+    u32 bump;
 
     // Mode
     Mode mode;
@@ -310,6 +313,7 @@ struct App
     GLuint albedoTexhandle;
     GLuint depthTexhandle;
     GLuint positionTexhandle;
+    GLuint normalTexhandle2;
 
     glm::vec3 vposition;
     glm::vec3 vrotation;
