@@ -574,8 +574,12 @@ void Gui(App* app)
     ImGui::Begin("Scene", &active, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     ImGui::PushItemWidth(400);
     ImGui::Combo("Render Type", &app->selectedmodes, app->rmodes, IM_ARRAYSIZE(app->rmodes));
-    //ImGui::SameLine();
+    ImGui::SameLine();
     ImGui::Combo("Render Mode", &app->selectedmode, app->rmode, IM_ARRAYSIZE(app->rmode));
+    ImGui::SameLine();
+    ImGui::Checkbox("Normal Map", &app->normalMap);
+    ImGui::SameLine();
+    ImGui::Checkbox("Height Map", &app->heightMap);
     switch (app->selectedmodes)
     {
     case 0:
