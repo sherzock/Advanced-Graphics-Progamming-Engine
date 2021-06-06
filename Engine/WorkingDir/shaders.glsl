@@ -285,7 +285,7 @@ void main()
 		 //Convert normal from tangent space to world space
 		mat3 TBN = mat3(T, B, N);	
 		vec3 tangentSpaceNormal = texture(uNormalTex, vTexCoord).xyz * 2.0 - vec3(1.0);
-		N = normalize(TBN * tangentSpaceNormal);
+		N = TBN * tangentSpaceNormal;
 	}
 	
 	oNormals = vec4(N, 1.0);

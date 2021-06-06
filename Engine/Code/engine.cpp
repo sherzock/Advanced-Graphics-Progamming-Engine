@@ -984,7 +984,7 @@ void DeferredGeometryPass(App * app)
             {
                 glActiveTexture(GL_TEXTURE1);
                 glBindTexture(GL_TEXTURE_2D, app->textures[app->normalbump].handle);
-                glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "uNormalMap"), 1);
+                glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "uNormalTex"), 1);
 
                 if (app->entities[i].modelIndex == app->bump)
                     glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "noNormal"), 0);
