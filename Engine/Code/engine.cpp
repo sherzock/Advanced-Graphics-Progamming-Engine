@@ -698,10 +698,11 @@ void Gui(App* app)
             }
         }
     }
-    ImGui::CollapsingHeader("Bump");
-    ImGui::DragFloat("Bump", &app->heightBumpParam);
+
     ImGui::End();
 
+    ImGui::Begin("Bump");
+    ImGui::DragFloat("Bump", &app->heightBumpParam);
     ImGui::End();
 
     ImGui::Begin("Info");
@@ -1112,12 +1113,12 @@ void Render(App* app)
 
                 glEnable(GL_DEPTH_TEST);
 
-                for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+                for (u32 j = 0; j < mesh.submeshes.size(); ++j)
                 {
-                    GLuint vao = FindVAO(mesh, i, ForwardShadingProgram);
+                    GLuint vao = FindVAO(mesh, j, ForwardShadingProgram);
                     glBindVertexArray(vao);
 
-                    u32 submeshMaterialIdx = model.materialIdx[i];
+                    u32 submeshMaterialIdx = model.materialIdx[j];
                     Material& submeshMaterial = app->materials[submeshMaterialIdx];
 
                     glActiveTexture(GL_TEXTURE0);
@@ -1152,7 +1153,7 @@ void Render(App* app)
                     }
 
                     // Draw elements
-                    Submesh& submesh = mesh.submeshes[i];
+                    Submesh& submesh = mesh.submeshes[j];
                     glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
                 }
 
