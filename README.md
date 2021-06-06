@@ -20,21 +20,31 @@
 <h2>Features</h2>
 
 <p>Hierarchy of loaded models.</p>
-![alt 1](webImgs/hierarchy.png)
+
+![alt 1](webImgs/hierarchy.png)<br>
+
 <p>Info window with opengl information and app info.</p>
-![alt 2](webImgs/info.png)
+
+![alt 2](webImgs/info.png)<br>
+
 <p>Inspector to edit the selected entity.</p>
+
 <p>Tranform to translate, scale, rotate and edit the different entities.</p>
-![alt 3](webImgs/inspector1.png)
-![alt 4](webImgs/inspector2.png)
+
+![alt 3](webImgs/inspector1.png)<br>
+![alt 4](webImgs/inspector2.png)<br>
+
 <p>Game window with the render and two combo boxes to edit the render type and mode.
 <br>
 CheckBoxes to enable and disable bloom effect and Height map.</p>
-![alt 5](webImgs/renderbox.png)
-![alt 6](webImgs/modes.png)
+
+![alt 5](webImgs/renderbox.png)<br>
+![alt 6](webImgs/modes.png)<br>
+
 <p>Parameters can be edited for bloom effect and Height map.</p>
-![alt 7](webImgs/BloomParams.png)
-![alt 8](webImgs/bumpParams.png)
+
+![alt 7](webImgs/BloomParams.png)<br>
+![alt 8](webImgs/bumpParams.png)<br>
 
 <h2>Effects Comparison Screenshots</h2>
 
