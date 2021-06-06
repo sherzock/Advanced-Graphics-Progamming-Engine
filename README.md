@@ -36,29 +36,54 @@
 
 <p>Tranform to translate, scale, rotate and edit the different entities.</p>
 
-![alt 3](webImgs/inspector1.png)<br>
-![alt 4](webImgs/inspector2.png)<br>
+![alt 3](webImgs/inspector1.png)
+
+<br>
+
+![alt 4](webImgs/inspector2.png)
+
+<br>
 
 <p>Game window with the render and two combo boxes to edit the render type and mode.
 <br>
 CheckBoxes to enable and disable bloom effect and Height map.</p>
 
-![alt 5](webImgs/renderbox.png)<br>
-![alt 6](webImgs/modes.png)<br>
+![alt 5](webImgs/renderbox.png)
+
+<br>
+
+![alt 6](webImgs/modes.png)
+
+<br>
 
 <p>Parameters can be edited for bloom effect and Height map.</p>
 
-![alt 7](webImgs/BloomParams.png)<br>
-![alt 8](webImgs/bumpParams.png)<br>
+![alt 7](webImgs/BloomParams.png)
+
+<br>
+
+![alt 8](webImgs/bumpParams.png)
+
+<br>
 
 <h2>Effects Comparison Screenshots</h2>
 
 <h3>Bloom</h3>
 
-![alt 9](webImgs/BloomOff.png)<br>
-![alt 10](webImgs/BloomOn.png)<br>
+![alt 9](webImgs/BloomOff.png)
+
+<br>
+
+![alt 10](webImgs/BloomOn.png)
+
+<br>
 
 <h3>Relief Mapping</h3>
 
-![alt 11](webImgs/bumpOff.png)<br>
-![alt 12](webImgs/bumpOn.png)<br>
+![alt 11](webImgs/bumpOff.png)
+
+<br>
+
+![alt 12](webImgs/bumpOn.png)
+
+<br>
