@@ -493,7 +493,9 @@ void Init(App* app)
     //create unifomr buffer
     app->uniformBuff = CreateConstantBuffer(app->maxUniformBufferSize);
 
-    app->heightBumpParam = 1.0f;
+    app->heightBumpParam = 0.1f;
+    app->texSize = 1000;
+    app->steps = 200;
     app->normalMap = true;
     app->heightMap = true;
 
@@ -539,7 +541,7 @@ void Init(App* app)
     Light light1;
     light1.type = LightType::LightType_Directional;
     light1.direction = vec3(0.0, 1.0, 0.0);
-    light1.color = vec3(0.0, 0.156, 1.0);
+    light1.color = vec3(1.0, 1.0, 1.0);
     light1.position = vec3(0.0, 5.0, 0.0);
     light1.id = ++id;
     app->lights.push_back(light1);
@@ -548,7 +550,7 @@ void Init(App* app)
     Light light2;
     light2.type = LightType::LightType_Point;
     light2.direction = vec3(50.0, 0.0, 0.0);
-    light2.color = vec3(0.982, 0.306, 0.306);
+    light2.color = vec3(1.0, 1.0, 1.0);
     light2.position = vec3(-1.0, 1.0, -1.5);
     light2.id = ++id;
     app->lights.push_back(light2);
@@ -557,7 +559,7 @@ void Init(App* app)
     Light light3;
     light3.type = LightType::LightType_Point;
     light3.direction = vec3(-50.0, 0.0, 0.0);
-    light3.color = vec3(0.132, 1.0, 0.0);
+    light3.color = vec3(1.0, 1.0, 1.0);
     light3.position = vec3(1.2, 1.1, 3.6);
     light3.id = ++id;
     app->lights.push_back(light3);
@@ -572,12 +574,15 @@ void Gui(App* app)
 {
     bool active = true;
     ImGui::Begin("Scene", &active, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-    ImGui::PushItemWidth(400);
+    ImGui::PushItemWidth(85);
     ImGui::Combo("Render Type", &app->selectedmodes, app->rmodes, IM_ARRAYSIZE(app->rmodes));
+    ImGui::PopItemWidth();
     ImGui::SameLine();
+    ImGui::PushItemWidth(150);
     ImGui::Combo("Render Mode", &app->selectedmode, app->rmode, IM_ARRAYSIZE(app->rmode));
-    ImGui::SameLine();
-    ImGui::Checkbox("Normal Map", &app->normalMap);
+    ImGui::PopItemWidth();
+    //ImGui::SameLine();
+    //ImGui::Checkbox("Normal Map", &app->normalMap);
     ImGui::SameLine();
     ImGui::Checkbox("Height Map", &app->heightMap);
     switch (app->selectedmodes)
@@ -706,7 +711,9 @@ void Gui(App* app)
     ImGui::End();
 
     ImGui::Begin("Bump");
-    ImGui::DragFloat("Bump", &app->heightBumpParam);
+    ImGui::DragFloat("Bump", &app->heightBumpParam, 0.1f, 0.0);
+    ImGui::DragInt("Texture Size", &app->texSize, 1.0f, 0);
+    ImGui::DragInt("Relief Steps", &app->steps, 1.0f, 0);
     ImGui::End();
 
     ImGui::Begin("Info");
@@ -800,7 +807,7 @@ void Update(App* app)
             c.cMode = CamMode::ORBITAL;
     }
 
-    if (app->last_active_gameObject != app->active_gameObject)
+    /*if (app->last_active_gameObject != app->active_gameObject)
     {
 
         if (app->active_gameObject->type == GOType::ENTITY)
@@ -813,7 +820,7 @@ void Update(App* app)
 
         app->last_active_gameObject = app->active_gameObject;
 
-    }
+    }*/
 
     if(c.cMode == CamMode::ORBITAL)
     { 
@@ -1022,6 +1029,8 @@ void DeferredGeometryPass(App * app)
                 glBindTexture(GL_TEXTURE_2D, app->textures[app->heightbump].handle);
                 glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "uHeightTex"), 2);
                 glUniform1f(glGetUniformLocation(GeoDeferredShadingProgram.handle, "uHeightBump"), app->heightBumpParam);
+                glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "texSize"), app->texSize);
+                glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "steps"), app->steps);
 
                 if (app->entities[i].modelIndex == app->bump)
                     glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "heightMapBool"), 1);
@@ -1149,6 +1158,8 @@ void Render(App* app)
                         glBindTexture(GL_TEXTURE_2D, app->textures[app->heightbump].handle);
                         glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "uHeightTex"), 2);
                         glUniform1f(glGetUniformLocation(ForwardShadingProgram.handle, "uHeightBump"), app->heightBumpParam);
+                        glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "texSize"), app->texSize);
+                        glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "steps"), app->steps);
 
                         if (app->entities[i].modelIndex == app->bump)
                             glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "heightMapBool"), 1);

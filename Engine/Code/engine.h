@@ -231,7 +231,9 @@ struct App
 
 
     //params for shaders
-    float heightBumpParam = 1.0f;
+    float heightBumpParam = 0.1f;
+    int texSize = 1000;
+    int steps = 200;
     bool normalMap = true;
     bool heightMap = true;
 

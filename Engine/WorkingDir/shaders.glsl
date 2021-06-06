@@ -112,6 +112,9 @@ uniform sampler2D uHeightTex;
 uniform int normalMapBool;
 uniform int heightMapBool;
 
+uniform int texSize;
+uniform int steps;
+
 uniform float uHeightBump;
 
 layout(binding = 0, std140) uniform GlobalParams
@@ -139,26 +142,24 @@ float DepthCalc(float depth)
 // Parallax occlusion mapping aka. relief mapping
 vec2 reliefMapping(vec2 texCoords, mat3 tangentSpaceMat)
 {
-	 int numSteps = 60;
- 
+
 	 // Compute the view ray in texture space
 	 vec3 rayTexspace = transpose(tangentSpaceMat) * normalize(-vViewDir.xyz);
 	 
 	 // Increment
-	 float texSize = 248;
 	 vec3 rayIncrementTexspace;
 	 rayIncrementTexspace.xy = uHeightBump * rayTexspace.xy / abs(rayTexspace.z * texSize);
-	 rayIncrementTexspace.z = 1.0/numSteps;
+	 rayIncrementTexspace.z = 1.0/steps;
 	 
 	 // Sampling state
 	 vec3 samplePositionTexspace = vec3(texCoords, 0.0);
-	 float sampledDepth = /*1.0 - */texture(uHeightTex, samplePositionTexspace.xy).r;
+	 float sampledDepth = /*1.0 -*/ texture(uHeightTex, samplePositionTexspace.xy).r;
 	 
 	 // Linear search
-	 for (int i = 0; i < numSteps && samplePositionTexspace.z < sampledDepth; ++i)
+	 for (int i = 0; i < steps && samplePositionTexspace.z < sampledDepth; ++i)
 	 {
 		 samplePositionTexspace += rayIncrementTexspace;
-		 sampledDepth = /*1.0 - */texture(uHeightTex, samplePositionTexspace.xy).r;
+		 sampledDepth = /*1.0 -*/ texture(uHeightTex, samplePositionTexspace.xy).r;
 	 }
 	 return samplePositionTexspace.xy;
 }
@@ -338,6 +339,9 @@ uniform sampler2D uHeightTex;
 uniform int normalMapBool;
 uniform int heightMapBool;
 
+uniform int texSize;
+uniform int steps;
+
 uniform float uHeightBump;
 
 layout(binding = 0, std140) uniform GlobalParams
@@ -365,26 +369,24 @@ float DepthCalc(float depth)
 // Parallax occlusion mapping aka. relief mapping
 vec2 reliefMapping(vec2 texCoords, mat3 tangentSpaceMat)
 {
-	 int numSteps = 60;
- 
+
 	 // Compute the view ray in texture space
 	 vec3 rayTexspace = transpose(tangentSpaceMat) * normalize(-vViewDir.xyz);
 	 
 	 // Increment
-	 float texSize = 248;
 	 vec3 rayIncrementTexspace;
 	 rayIncrementTexspace.xy = uHeightBump * rayTexspace.xy / abs(rayTexspace.z * texSize);
-	 rayIncrementTexspace.z = 1.0/numSteps;
+	 rayIncrementTexspace.z = 1.0/steps;
 	 
 	 // Sampling state
 	 vec3 samplePositionTexspace = vec3(texCoords, 0.0);
-	 float sampledDepth = texture(uHeightTex, samplePositionTexspace.xy).r;
+	 float sampledDepth = /*1.0 -*/ texture(uHeightTex, samplePositionTexspace.xy).r;
 	 
 	 // Linear search
-	 for (int i = 0; i < numSteps && samplePositionTexspace.z < sampledDepth; ++i)
+	 for (int i = 0; i < steps && samplePositionTexspace.z < sampledDepth; ++i)
 	 {
 		 samplePositionTexspace += rayIncrementTexspace;
-		 sampledDepth = texture(uHeightTex, samplePositionTexspace.xy).r;
+		 sampledDepth = /*1.0 -*/ texture(uHeightTex, samplePositionTexspace.xy).r;
 	 }
 	 return samplePositionTexspace.xy;
 }
