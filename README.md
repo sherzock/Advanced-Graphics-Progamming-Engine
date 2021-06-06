@@ -7,6 +7,7 @@ Advanced Programming Project made by university students: Èric Canela and Jacob
 <h2>Githubs</h2>
 
 [Jacobo Galofre](https://github.com/sherzock)
+<br>
 [Eric Canela](https://github.com/knela96)
 
 <h2>Controls</h2>
