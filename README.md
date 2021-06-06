@@ -2,7 +2,8 @@
 
 <h2>Deferred Engine </h2>
 
-Advanced Programming Project made by university students: Èric Canela and Jacobo Galofre
+<p>Advanced Programming Project made by university students: Èric Canela and Jacobo Galofre</p>
+![alt All](webImgs/All.png)
 
 <h2>Githubs</h2>
 
@@ -20,10 +21,30 @@ Advanced Programming Project made by university students: Èric Canela and Jacob
 
 <ul>
 	<li>Hierarchy of loaded models.</li>
+![alt All](webImgs/hierarchy.png)
 	<li>Info window with opengl information and app info.</li>
+![alt All](webImgs/info.png)
 	<li>Inspector to edit the selected entity.</li>
 	<li>Tranform to translate, scale, rotate and edit the different entities.</li>
+![alt All](webImgs/inspector1.png)
+![alt All](webImgs/inspector2.png)
 	<li>Game window with the render and two combo boxes to edit the render type and mode.</li>
 	<li>CheckBoxes to enable and disable bloom effect and Height map.</li>
+![alt All](webImgs/renderbox.png)
+![alt All](webImgs/modes.png)
 	<li>Parameters can be edited for bloom effect and Height map.</li>
+![alt All](webImgs/BloomParams.png)
+![alt All](webImgs/bumpParams.png)
 </ul>
+
+<h2>Effects Comparison Screenshots</h2>
+
+<h3>Bloom</h3>
+
+![alt All](webImgs/BloomOff.png)
+![alt All](webImgs/BloomOn.png)
+
+<h3>Relief Mapping</h3>
+
+![alt All](webImgs/bumpOff.png)
+![alt All](webImgs/bumpOn.png)
