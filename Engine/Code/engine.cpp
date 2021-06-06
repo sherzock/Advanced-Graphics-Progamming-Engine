@@ -806,8 +806,15 @@ void Update(App* app)
         {
             c.up = glm::cross(c.forward, c.right);
 
+            // Eric
+            vec3 up = vec3(0, 1, 0);
+            vec3 right = vec3(1, 0, 0);
+            glm::mat4x4 rotation_matrixX = glm::rotate(-app->input.mouseDelta.x / 2 * app->deltaTime, glm::normalize(up));
+            glm::mat4x4 rotation_matrixY = glm::rotate(-app->input.mouseDelta.y / 2 * app->deltaTime, glm::normalize(right));
+            /* Jacobo
             glm::mat4x4 rotation_matrixX = glm::rotate(-app->input.mouseDelta.x / 2 * app->deltaTime, glm::normalize(c.up));
             glm::mat4x4 rotation_matrixY = glm::rotate(-app->input.mouseDelta.y / 2 * app->deltaTime, glm::normalize(c.right));
+            */
             glm::mat4x4 transform = glm::translate(c.rotationCenter) * rotation_matrixX * rotation_matrixY * glm::translate(-c.rotationCenter);
 
             c.position = glm::vec3(transform * glm::vec4(c.position, 1));
