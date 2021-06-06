@@ -155,6 +155,12 @@ struct Program
     VertexShaderLayout vertexInputLayout;
 };
 
+enum CamMode
+{
+    FREE = 0,
+    ORBITAL
+};
+
 struct Camera
 {
     float y;//yaw
@@ -164,7 +170,9 @@ struct Camera
     glm::vec3 right;
     glm::vec3 up;
     glm::vec3 speed;
-    glm::vec3 reference;
+    glm::vec3 cameraReference;
+    glm::vec3 rotationCenter;
+    CamMode cMode = CamMode::FREE;
 };
 
 enum class GOType
@@ -226,6 +234,15 @@ struct App
     //OpenGL info
     OpenGLInfo info;
     GameObject* active_gameObject;
+    GameObject* last_active_gameObject;
+
+
+    //params for shaders
+    float heightBumpParam = 0.1f;
+    int texSize = 1000;
+    int steps = 200;
+    bool normalMap = true;
+    bool heightMap = true;
 
     // Loop
     f32  deltaTime;
@@ -269,16 +286,18 @@ struct App
     u32 blurIdx;
     u32 bloomIdx;
 
-    // texture indices
-    u32 diceTexIdx;
+    // texture plane
     u32 whiteTexIdx;
-    u32 blackTexIdx;
-    u32 normalTexIdx;
-    u32 magentaTexIdx;
+    
+    //texture bump
+    u32 albedobump;
+    u32 normalbump;
+    u32 heightbump;
 
     // Model indices
     u32 model;
     u32 plane;
+    u32 bump;
 
     // Mode
     Mode mode;
@@ -329,6 +348,8 @@ struct App
     GLuint positionTexhandle;
     GLuint rtBright;
     GLuint rtBloomH;
+    GLuint normalTexhandle2;
+
 
     glm::vec3 vposition;
     glm::vec3 vrotation;

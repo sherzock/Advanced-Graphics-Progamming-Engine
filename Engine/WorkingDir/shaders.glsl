@@ -53,6 +53,8 @@ struct Light
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec2 aTexCoord;
+layout(location = 3) in vec3 aTangent;
+layout(location = 4) in vec3 aBitangent;
 
 layout(binding = 0, std140) uniform GlobalParams
 {
@@ -72,13 +74,17 @@ out vec2 vTexCoord;
 out vec3 vPosition; // In World space
 out vec3 vNormal;   // In World space
 out vec3 vViewDir;  // In World space
+out vec3 vTangent;	
+out vec3 vBitangent;
 
 void main()
 {
     vTexCoord = aTexCoord;
     vPosition = vec3(model* vec4(aPosition, 1.0));
     vNormal = vec3(model * vec4(aNormal, 0.0));
-    vViewDir = uCameraPosition - vPosition;
+    vViewDir = vec3(uCameraPosition - vPosition);
+	vTangent = normalize(vec3(model * vec4(aTangent, 0.0)));
+    vBitangent = normalize(vec3(model * vec4(aBitangent, 0.0)));
     gl_Position = projection * view * model * vec4(aPosition, 1.0);
 }
 
@@ -95,9 +101,21 @@ struct Light
 in vec2 vTexCoord;
 in vec3 vPosition; // in worldspace
 in vec3 vNormal; // in worldspace
-in vec3 uViewDir; // in worldspace
+in vec3 vViewDir; // in worldspace
+in vec3 vTangent;
+in vec3 vBitangent;
 
 uniform sampler2D uTexture;
+uniform sampler2D uNormalTex;
+uniform sampler2D uHeightTex;
+
+uniform int normalMapBool;
+uniform int heightMapBool;
+
+uniform int texSize;
+uniform int steps;
+
+uniform float uHeightBump;
 
 layout(binding = 0, std140) uniform GlobalParams
 {
@@ -121,19 +139,64 @@ float DepthCalc(float depth)
     return (2.0 * near * far) / (far + near - z * (far - near));	
 }
 
+// Parallax occlusion mapping aka. relief mapping
+vec2 reliefMapping(vec2 texCoords, mat3 tangentSpaceMat)
+{
+
+	 // Compute the view ray in texture space
+	 vec3 rayTexspace = transpose(tangentSpaceMat) * normalize(-vViewDir.xyz);
+	 
+	 // Increment
+	 vec3 rayIncrementTexspace;
+	 rayIncrementTexspace.xy = uHeightBump * rayTexspace.xy / abs(rayTexspace.z * texSize);
+	 rayIncrementTexspace.z = 1.0/steps;
+	 
+	 // Sampling state
+	 vec3 samplePositionTexspace = vec3(texCoords, 0.0);
+	 float sampledDepth = /*1.0 -*/ texture(uHeightTex, samplePositionTexspace.xy).r;
+	 
+	 // Linear search
+	 for (int i = 0; i < steps && samplePositionTexspace.z < sampledDepth; ++i)
+	 {
+		 samplePositionTexspace += rayIncrementTexspace;
+		 sampledDepth = /*1.0 -*/ texture(uHeightTex, samplePositionTexspace.xy).r;
+	 }
+	 return samplePositionTexspace.xy;
+}
+
 void main()
 {
     	// Mat parameters
     vec3 specular = vec3(1.0);	// color reflected by mat
     float shininess = 1.0;		// how strong specular reflections are (more shininess harder and smaller spec)
-	vec4 albedo = texture(uTexture, vTexCoord);
+	//vec4 albedo = texture(uTexture, vTexCoord);
+
+	vec3 T = normalize(vTangent);
+	vec3 B = normalize(vBitangent);
+    vec3 N = normalize(vNormal);
+	mat3 TBN = mat3(T, B, N);	
+	
+	vec2 tcoords = vTexCoord;
+
+	if(heightMapBool ==1.0)
+		tcoords = reliefMapping(tcoords, TBN);
+
+	vec3 albedo = texture(uTexture, tcoords).rgb;
+
+	if (normalMapBool == 1.0)
+	{
+		vec3 tangentSpaceNormal = texture(uNormalTex, tcoords).xyz * 2.0 - vec3(1.0);
+		N = TBN * tangentSpaceNormal;
+	}
+	
+	oNormals = vec4(N, 1.0);
 
 	// Ambient
     float ambientIntensity = 0.5;
     vec3 ambientColor = albedo.xyz * ambientIntensity;
 
-    vec3 N = normalize(vNormal);		// normal
-	vec3 V = normalize(-uViewDir.xyz);	// direction from pixel to camera
+    //vec3 N = normalize(vNormal);		// normal
+	vec3 V = normalize(-vViewDir.xyz);	// direction from pixel to camera
 
 	vec3 diffuseColor;
 	vec3 specularColor;
@@ -146,7 +209,7 @@ void main()
 		if(uLight[i].type == 1)
 			attenuation = 2.0 / length(uLight[i].position - vPosition);
 	        
-	    vec3 L = normalize(uLight[i].direction - uViewDir.xyz); // Light direction 
+	    vec3 L = normalize(uLight[i].direction - vViewDir.xyz); // Light direction 
 	    vec3 R = reflect(-L, N);								// reflected vector
 	    
 	    // Diffuse
@@ -160,8 +223,8 @@ void main()
 
 	oColor = vec4(ambientColor + diffuseColor + specularColor, 1.0);
 
-	oNormals = vec4(normalize(vNormal), 1.0); 
-	oAlbedo = texture(uTexture, vTexCoord);
+	//oNormals = vec4(normalize(vNormal), 1.0); 
+	oAlbedo = texture(uTexture, tcoords);
 
 	float depth = DepthCalc(gl_FragCoord.z) / far; // divide by far for demonstration
 	oDepth = vec4(vec3(depth), 1.0);
@@ -171,6 +234,32 @@ void main()
 
 #endif
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //------------------------------------------------------------------------------------------------------
 //----------------------------------------Deferred Shading----------------------------------------------
@@ -191,6 +280,8 @@ struct Light
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec2 aTexCoord;
+layout(location = 3) in vec3 aTangent;
+layout(location = 4) in vec3 aBitangent;
 
 layout(binding = 0, std140) uniform GlobalParams
 {
@@ -210,13 +301,17 @@ out vec2 vTexCoord;
 out vec3 vPosition; // In World space
 out vec3 vNormal;   // In World space
 out vec3 vViewDir;  // In World space
+out vec3 vTangent;	
+out vec3 vBitangent;
 
 void main()
 {
     vTexCoord = aTexCoord;
-    vPosition = vec3(model* vec4(aPosition, 1.0));
+    vPosition = vec3(model * vec4(aPosition, 1.0));
     vNormal = vec3(model * vec4(aNormal, 0.0));
-    vViewDir = uCameraPosition - vPosition;
+    vViewDir = vec3(uCameraPosition - vPosition);
+	vTangent = normalize(vec3(model * vec4(aTangent, 0.0)));
+    vBitangent = normalize(vec3(model * vec4(aBitangent, 0.0)));
     gl_Position = projection * view * model * vec4(aPosition, 1.0);
 }
 
@@ -233,9 +328,21 @@ struct Light
 in vec2 vTexCoord;
 in vec3 vPosition; // in worldspace
 in vec3 vNormal; // in worldspace
-in vec3 uViewDir; // in worldspace
+in vec3 vViewDir; // in worldspace
+in vec3 vTangent;
+in vec3 vBitangent;
 
 uniform sampler2D uTexture;
+uniform sampler2D uNormalTex;
+uniform sampler2D uHeightTex;
+
+uniform int normalMapBool;
+uniform int heightMapBool;
+
+uniform int texSize;
+uniform int steps;
+
+uniform float uHeightBump;
 
 layout(binding = 0, std140) uniform GlobalParams
 {
@@ -259,11 +366,55 @@ float DepthCalc(float depth)
     return (2.0 * near * far) / (far + near - z * (far - near));	
 }
 
+// Parallax occlusion mapping aka. relief mapping
+vec2 reliefMapping(vec2 texCoords, mat3 tangentSpaceMat)
+{
+
+	 // Compute the view ray in texture space
+	 vec3 rayTexspace = transpose(tangentSpaceMat) * normalize(-vViewDir.xyz);
+	 
+	 // Increment
+	 vec3 rayIncrementTexspace;
+	 rayIncrementTexspace.xy = uHeightBump * rayTexspace.xy / abs(rayTexspace.z * texSize);
+	 rayIncrementTexspace.z = 1.0/steps;
+	 
+	 // Sampling state
+	 vec3 samplePositionTexspace = vec3(texCoords, 0.0);
+	 float sampledDepth = /*1.0 -*/ texture(uHeightTex, samplePositionTexspace.xy).r;
+	 
+	 // Linear search
+	 for (int i = 0; i < steps && samplePositionTexspace.z < sampledDepth; ++i)
+	 {
+		 samplePositionTexspace += rayIncrementTexspace;
+		 sampledDepth = /*1.0 -*/ texture(uHeightTex, samplePositionTexspace.xy).r;
+	 }
+	 return samplePositionTexspace.xy;
+}
+
 void main()
 {
 	oPosition = vec4(vPosition,1.0);
-	oNormals = vec4(normalize(vNormal), 1.0); 
-	oAlbedo = texture(uTexture, vTexCoord);
+
+	vec3 T = normalize(vTangent);
+	vec3 B = normalize(vBitangent);
+    vec3 N = normalize(vNormal);
+	mat3 TBN = mat3(T, B, N);	
+	
+	vec2 tcoords = vTexCoord;
+
+	if(heightMapBool ==1.0)
+		tcoords = reliefMapping(tcoords, TBN);
+
+	oAlbedo = texture(uTexture, tcoords);
+
+	if (normalMapBool == 1.0)
+	{
+		vec3 tangentSpaceNormal = texture(uNormalTex, tcoords).xyz * 2.0 - vec3(1.0);
+		N = TBN * tangentSpaceNormal;
+	}
+	
+	oNormals = vec4(N, 1.0);
+
 
 	float depth = DepthCalc(gl_FragCoord.z) / far; 
 	oDepth = vec4(vec3(depth), 1.0);
@@ -271,6 +422,26 @@ void main()
 
 #endif
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //---------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------

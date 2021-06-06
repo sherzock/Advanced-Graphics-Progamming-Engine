@@ -516,15 +516,20 @@ void Init(App* app)
     app->bloomIdx = LoadProgram(app, "shaders.glsl", "Mode_Bloom");
 
     //Texture Initialization
+
     app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
-    app->diceTexIdx = LoadTexture2D(app, "dice.png");
-    app->blackTexIdx = LoadTexture2D(app, "color_black.png");
-    app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
-    app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
+
+    //Texture bump Init
+    app->albedobump = LoadTexture2D(app, "Bump/wood.png");
+    app->normalbump = LoadTexture2D(app, "Bump/toy_box_normal.png");
+    app->heightbump = LoadTexture2D(app, "Bump/toy_box_disp.png");
+
 
     //Load model patrick
     app->model = LoadModel(app, "Patrick/Patrick.obj");
     app->plane = LoadModel(app, "../WorkingDir/Plane.obj");
+    app->bump = LoadModel(app, "Bump/Cube.fbx");
+
 
     //app->plane = LoadPlane(app);
 
@@ -547,8 +552,10 @@ void Init(App* app)
     Camera& camera = app->cam;
     camera.y = 0.0f;
     camera.p = 0.0f;
-    camera.position = glm::vec3(0.0, 1.0, 10.0);
-    camera.reference = glm::vec3(0.0,0.0,0.0);
+    camera.position = glm::vec3(0.0, 0.0, 10.0);
+    camera.rotationCenter = { 0.0, 0.0, 0.0 };
+    camera.cMode = CamMode::FREE;
+
 
     //Framebuffer Init
     FrameBufferObject(app);
@@ -561,9 +568,15 @@ void Init(App* app)
     //create unifomr buffer
     app->uniformBuff = CreateConstantBuffer(app->maxUniformBufferSize);
 
-    int id = -1;
+    app->heightBumpParam = 0.1f;
+    app->texSize = 1000;
+    app->steps = 200;
+    app->normalMap = true;
+    app->heightMap = true;
 
     //Entities Creation
+    int id = -1;
+
     Entity plane;
     plane.worldMatrix = TransformPositionScale({ 0.0, 0.0, 0.0 }, { 25.0,1.0,25.0 });
     plane.modelIndex = app->plane;
@@ -592,6 +605,13 @@ void Init(App* app)
     app->entities.push_back(patrick3);
     app->gameObjects.push_back(GameObject("patrick3", id, app->entities.size() - 1, GOType::ENTITY, &patrick3.worldMatrix));
 
+    Entity bump1;
+    bump1.worldMatrix = TransformPositionScale({ 10.0, -2.7, 0.0 }, { 0.05, 0.05, 0.05 });
+    bump1.modelIndex = app->bump;
+    bump1.id = ++id;
+    app->entities.push_back(bump1);
+    app->gameObjects.push_back(GameObject("bump Barrel", id, app->entities.size() - 1, GOType::ENTITY, &bump1.worldMatrix));
+
     // lights Creation
     Light light1;
     light1.type = LightType::LightType_Directional;
@@ -615,7 +635,7 @@ void Init(App* app)
     light3.type = LightType::LightType_Point;
     light3.direction = vec3(-50.0, 0.0, 0.0);
     light3.color = vec3(1.0, 1.0, 1.0);
-    light3.position = vec3(1.2, 1.1, 1.0);
+    light3.position = vec3(1.2, 1.1, 3.6);
     light3.id = ++id;
     app->lights.push_back(light3);
     app->gameObjects.push_back(GameObject("Point2", id, app->lights.size() - 1, GOType::LIGHT));
@@ -635,10 +655,18 @@ void Gui(App* app)
 {
     bool active = true;
     ImGui::Begin("Scene", &active, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-    ImGui::PushItemWidth(400);
+    ImGui::PushItemWidth(85);
     ImGui::Combo("Render Type", &app->selectedmodes, app->rmodes, IM_ARRAYSIZE(app->rmodes));
-    //ImGui::SameLine();
+    ImGui::PopItemWidth();
+    ImGui::SameLine();
+    ImGui::PushItemWidth(150);
     ImGui::Combo("Render Mode", &app->selectedmode, app->rmode, IM_ARRAYSIZE(app->rmode));
+
+    ImGui::PopItemWidth();
+    //ImGui::SameLine();
+    //ImGui::Checkbox("Normal Map", &app->normalMap);
+    ImGui::SameLine();
+    ImGui::Checkbox("Height Map", &app->heightMap);
 
     switch (app->selectedmodes)
     {
@@ -774,7 +802,13 @@ void Gui(App* app)
     ImGui::SliderFloat("LOD3 Intensity", &app->LOD3, 0, 2);
     ImGui::SliderFloat("LOD4 Intensity", &app->LOD4, 0, 2);
 
+
+    ImGui::Text("Bump");
+    ImGui::DragFloat("Bump", &app->heightBumpParam, 0.1f, 0.0);
+    ImGui::DragInt("Texture Size", &app->texSize, 1.0f, 0);
+    ImGui::DragInt("Relief Steps", &app->steps, 1.0f, 0);
     ImGui::End();
+
 
     ImGui::Begin("Info");
     ImGui::Text("FPS:");
@@ -838,31 +872,6 @@ void CreateHierarchy(App* app, GameObject* parent) {
 }
 
 
-// -----------------------------------------------------------------
-void Look(Camera c, const vec3& Position, const vec3& Reference)
-{
-    c.position = Position;
-    c.reference = Reference;
-
-    c.forward = glm::normalize(Reference - Position);
-    c.right = glm::normalize(glm::cross(vec3(0.0f, 1.0f, 0.0f), c.forward));
-    c.up = glm::cross(c.forward, c.right);
-
- /*   if (!RotateAroundReference)
-    {*/
-        //c.reference = c.position;
-        //c.position += c.forward * 0.05f;
-    /*}*/
-
-}
-
-// -----------------------------------------------------------------
-void LookAt(Camera c, const vec3& Spot)
-{
-    c.reference = Spot;
-    vec3 position = { Spot.x,Spot.y,Spot.z };
-    Look(c, position, c.reference);
-}
 
 void Update(App* app)
 {
@@ -883,75 +892,79 @@ void Update(App* app)
 
     // Camera update
     Camera& c = app->cam;
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
-    if (app->input.mouseButtons[RIGHT] == BUTTON_PRESSED)
+
+
+    if (app->input.keys[K_F] == BUTTON_PRESS)
     {
-        c.y += app->input.mouseDelta.x * TAU / 360.0f;
-        c.p -= app->input.mouseDelta.y * TAU / 360.0f;
+        if (c.cMode != CamMode::FREE)
+            c.cMode = CamMode::FREE;
+        else
+            c.cMode = CamMode::ORBITAL;
+    }
+
+
+    if(c.cMode == CamMode::ORBITAL)
+    { 
+        if (app->input.mouseButtons[RIGHT] == BUTTON_PRESSED)
+        {
+            c.up = glm::cross(c.forward, c.right);
+
+            // Eric
+            vec3 up = vec3(0, 1, 0);
+            vec3 right = vec3(1, 0, 0);
+            glm::mat4x4 rotation_matrixX = glm::rotate(-app->input.mouseDelta.x / 2 * app->deltaTime, glm::normalize(up));
+            glm::mat4x4 rotation_matrixY = glm::rotate(-app->input.mouseDelta.y / 2 * app->deltaTime, glm::normalize(right));
+            /* Jacobo
+            glm::mat4x4 rotation_matrixX = glm::rotate(-app->input.mouseDelta.x / 2 * app->deltaTime, glm::normalize(c.up));
+            glm::mat4x4 rotation_matrixY = glm::rotate(-app->input.mouseDelta.y / 2 * app->deltaTime, glm::normalize(c.right));
+            */
+            glm::mat4x4 transform = glm::translate(c.rotationCenter) * rotation_matrixX * rotation_matrixY * glm::translate(-c.rotationCenter);
+
+            c.position = glm::vec3(transform * glm::vec4(c.position, 1));
+            c.cameraReference = glm::vec3(transform * glm::vec4(c.cameraReference, 1));
+        }
+    }
     
+    else if (c.cMode == CamMode::FREE)
+    {
+        if (app->input.mouseButtons[RIGHT] == BUTTON_PRESSED)
+        {
+            c.y += app->input.mouseDelta.x * TAU / 360.0f;
+            c.p -= app->input.mouseDelta.y * TAU / 360.0f;
+        }
     }
     
     c.y = glm::mod(c.y, TAU);
     c.p = glm::clamp(c.p, -PI / 2.1f, PI / 2.1f);
-    c.right = glm::normalize(glm::vec3(cosf(c.y), 0.0f, sinf(c.y)));
-    c.forward = glm::normalize(glm::vec3(cosf(c.p) * sinf(c.y), sinf(c.p), -cosf(c.p) * cosf(c.y)));
-    c.up = glm::cross(c.right, c.forward);
-    app->view = glm::lookAt(c.position, c.position + c.forward, c.up);
-
-    //if (app->input.mouseButtons[LEFT] == BUTTON_PRESSED)
-    //{
-    //    if (app->input.mouseDelta.x != 0 || app->input.mouseDelta.y != 0) {
-    //
-    //        int dx = -app->input.mouseDelta.x;
-    //        int dy = -app->input.mouseDelta.y;
-    //
-    //        glm::quat quat_y(c.up.x, c.up.y, c.up.z, dx * 0.0005);
-    //        glm::quat quat_x(c.right.x, c.right.y, c.right.z, dy * 0.005);
-    //
-    //        vec3 vect = c.position - c.reference;
-    //        vect = glm::rotate(quat_x, vect);
-    //        vect = glm::rotate(quat_y, vect);
-    //        c.position = vect + c.reference;
-    //
-    //        app->view = glm::lookAt(c.position, c.reference, c.up);
-    //
-    //        c.right = app->view * glm::normalize(vec4(c.right, 0));
-    //        c.forward = app->view * glm::normalize(vec4(c.forward, 0));
-    //        c.up = glm::cross(c.forward, c.right);
-    //
-    //        //c.forward = glm::normalize(app->view * vec4(c.forward, 1));
-    //        //c.up = glm::normalize(app->view * vec4(c.up, 1));
-    //        //c.right = glm::normalize(glm::cross(up, c.right));
-    //    }
-    //}
-
-
-
-
+    c.forward = glm::vec3(cosf(c.p) * sinf(c.y), sinf(c.p), -cosf(c.p) * cosf(c.y));
+    c.right = glm::vec3(cosf(c.y), 0.0f, sinf(c.y));
 
     bool acc = false;
-    
-    if (app->input.keys[K_W] == BUTTON_PRESSED) 
+    if (c.cMode == CamMode::FREE)
     {
-        acc = true; c.speed += c.forward;
+
+        if (app->input.keys[K_W] == BUTTON_PRESSED)
+        {
+            acc = true; c.speed += c.forward;
+        }
+
+        if (app->input.keys[K_S] == BUTTON_PRESSED)
+        {
+            acc = true; c.speed -= c.forward;
+        }
+
+        if (app->input.keys[K_D] == BUTTON_PRESSED)
+        {
+            acc = true; c.speed += c.right;
+        }
+
+        if (app->input.keys[K_A] == BUTTON_PRESSED)
+        {
+            acc = true; c.speed -= c.right;
+        }
+
     }
-    
-    if (app->input.keys[K_S] == BUTTON_PRESSED) 
-    {
-        acc = true; c.speed -= c.forward;
-    }
-    
-    if (app->input.keys[K_D] == BUTTON_PRESSED) 
-    {
-        acc = true; c.speed += c.right;
-    }
-    
-    if (app->input.keys[K_A] == BUTTON_PRESSED) 
-    {
-        acc = true; c.speed -= c.right;
-    }
-    
     if (!acc) { c.speed *= 0.8; }
 
     if (glm::length(c.speed) > 100.0f) 
@@ -966,11 +979,18 @@ void Update(App* app)
     c.position += c.speed * app->deltaTime;
 
 
-    
-    //glm::vec3 upVector = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 upVector = glm::vec3(0.0f, 1.0f, 0.0f);
     float aspectRatio = (float)app->displaySize.x / (float)app->displaySize.y;
     
     app->projection = glm::perspective(glm::radians(60.0f), aspectRatio, 0.1f, 1000.0f);
+    if (c.cMode == CamMode::ORBITAL)
+    {
+        app->view = glm::lookAt(c.position, c.cameraReference, upVector);
+    }
+    else if (c.cMode == CamMode::FREE)
+    {
+        app->view = glm::lookAt(c.position, c.position + c.forward, upVector);
+    }
     app->modl = glm::mat4(1.0f);
 
     //Uniform Buffer update
@@ -1060,21 +1080,50 @@ void DeferredGeometryPass(App * app)
 
         glEnable(GL_DEPTH_TEST);
 
-        for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+        for (u32 j = 0; j < mesh.submeshes.size(); ++j)
         {
-            GLuint vao = FindVAO(mesh, i, GeoDeferredShadingProgram);
+            GLuint vao = FindVAO(mesh, j, GeoDeferredShadingProgram);
             glBindVertexArray(vao);
 
-            u32 submeshMaterialIdx = model.materialIdx[i];
+            u32 submeshMaterialIdx = model.materialIdx[j];
             Material& submeshMaterial = app->materials[submeshMaterialIdx];
 
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
             glUniform1i(app->programUniformTexture, 0);
 
-            // Draw elements
-            Submesh& submesh = mesh.submeshes[i];
-            glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+            // Normal mapping passing info and creating  textures for shader
+            if (app->normalMap)
+            {
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, app->textures[app->normalbump].handle);
+                glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "uNormalTex"), 1);
+
+                if (app->entities[i].modelIndex == app->bump)
+                    glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "normalMapBool"), 1);
+                else
+                    glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "normalMapBool"), 0);
+            }
+
+            // Relief mapping passing info and creating  textures for shader
+            if (app->heightMap)
+            {
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, app->textures[app->heightbump].handle);
+                glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "uHeightTex"), 2);
+                glUniform1f(glGetUniformLocation(GeoDeferredShadingProgram.handle, "uHeightBump"), app->heightBumpParam);
+                glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "texSize"), app->texSize);
+                glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "steps"), app->steps);
+
+                if (app->entities[i].modelIndex == app->bump)
+                    glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "heightMapBool"), 1);
+                else
+                    glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "heightMapBool"), 0);
+            }
+
+                // Draw elements
+                Submesh& submesh = mesh.submeshes[j];
+                glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
         }
 
     }
@@ -1082,15 +1131,7 @@ void DeferredGeometryPass(App * app)
 
 void DeferredShadingPass(App * app)
 {
-    //glEnable(GL_DEPTH_TEST);
-    //glDepthMask(GL_FALSE);
-    //glEnable(GL_BLEND);
-    //glBlendFunc(GL_ONE, GL_ONE);
-
-    //Render on this framebuffer render targets
-    //glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
-
-     // Bind the program
+    // Bind the program
     Program& ShadDeferredShadingProgram = app->programs[app->DeferredLightingIdx];
     glUseProgram(ShadDeferredShadingProgram.handle);
 
@@ -1148,10 +1189,9 @@ void Render(App* app)
 
     switch (app->mode)
     {
+
     case Mode_ForwardShading:
     {
-        glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Forward Shading");
-
         //Render on this framebuffer render targets
         glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
 
@@ -1180,30 +1220,57 @@ void Render(App* app)
 
             glEnable(GL_DEPTH_TEST);
 
-            for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+            for (u32 j = 0; j < mesh.submeshes.size(); ++j)
             {
-                GLuint vao = FindVAO(mesh, i, ForwardShadingProgram);
+                GLuint vao = FindVAO(mesh, j, ForwardShadingProgram);
                 glBindVertexArray(vao);
 
-                u32 submeshMaterialIdx = model.materialIdx[i];
+                u32 submeshMaterialIdx = model.materialIdx[j];
                 Material& submeshMaterial = app->materials[submeshMaterialIdx];
 
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
                 glUniform1i(app->programUniformTexture, 0);
 
+                // Normal mapping passing info and creating  textures for shader
+                if (app->normalMap)
+                {
+                    glActiveTexture(GL_TEXTURE1);
+                    glBindTexture(GL_TEXTURE_2D, app->textures[app->normalbump].handle);
+                    glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "uNormalTex"), 1);
+
+                    if (app->entities[i].modelIndex == app->bump)
+                        glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "normalMapBool"), 1);
+                    else
+                        glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "normalMapBool"), 0);
+                }
+
+                // Relief mapping passing info and creating  textures for shader
+                if (app->heightMap)
+                {
+                    glActiveTexture(GL_TEXTURE2);
+                    glBindTexture(GL_TEXTURE_2D, app->textures[app->heightbump].handle);
+                    glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "uHeightTex"), 2);
+                    glUniform1f(glGetUniformLocation(ForwardShadingProgram.handle, "uHeightBump"), app->heightBumpParam);
+
+                    if (app->entities[i].modelIndex == app->bump)
+                        glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "heightMapBool"), 1);
+                    else
+                        glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "heightMapBool"), 0);
+                }
+
                 // Draw elements
-                Submesh& submesh = mesh.submeshes[i];
+                Submesh& submesh = mesh.submeshes[j];
                 glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
             }
 
         }
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glUseProgram(0);
         glPopDebugGroup();
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        break;
     }
-    break;
     case Mode_DeferredShading:
     {
         glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Deferred Shading");
@@ -1258,13 +1325,13 @@ void RenderBloom(App* app) {
     passBlur(app, app->fboBloom3, vec2(w / 8, h / 8), GL_COLOR_ATTACHMENT1, app->rtBright, LOD(2), horizontal);
     passBlur(app, app->fboBloom4, vec2(w / 16, h / 16), GL_COLOR_ATTACHMENT1, app->rtBright, LOD(3), horizontal);
     passBlur(app, app->fboBloom5, vec2(w / 32, h / 32), GL_COLOR_ATTACHMENT1, app->rtBright, LOD(4), horizontal);
-    
+
     passBlur(app, app->fboBloom1, vec2(w / 2, h / 2), GL_COLOR_ATTACHMENT0, app->rtBloomH, LOD(0), vertical);
     passBlur(app, app->fboBloom2, vec2(w / 4, h / 4), GL_COLOR_ATTACHMENT0, app->rtBloomH, LOD(1), vertical);
     passBlur(app, app->fboBloom3, vec2(w / 8, h / 8), GL_COLOR_ATTACHMENT0, app->rtBloomH, LOD(2), vertical);
     passBlur(app, app->fboBloom4, vec2(w / 16, h / 16), GL_COLOR_ATTACHMENT0, app->rtBloomH, LOD(3), vertical);
     passBlur(app, app->fboBloom5, vec2(w / 32, h / 32), GL_COLOR_ATTACHMENT0, app->rtBloomH, LOD(4), vertical);
-    
+
     //Apply Blurred Pixels on top of Original
     passBloom(app, app->framebufferHandle, GL_COLOR_ATTACHMENT0, app->rtBright, 5);
 
@@ -1274,7 +1341,7 @@ void RenderBloom(App* app) {
     glPopDebugGroup();
 }
 
-void passBlitBrightPixels(App* app, GLuint& fbo, const vec2& size, GLenum attachment, GLuint& inputTexture, GLint LOD, float threshold) 
+void passBlitBrightPixels(App* app, GLuint& fbo, const vec2& size, GLenum attachment, GLuint& inputTexture, GLint LOD, float threshold)
 {
     //Render on this framebuffer render targets
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
