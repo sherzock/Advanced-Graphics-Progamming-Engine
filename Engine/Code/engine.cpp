@@ -968,12 +968,12 @@ void DeferredGeometryPass(App * app)
 
         glEnable(GL_DEPTH_TEST);
 
-        for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+        for (u32 j = 0; j < mesh.submeshes.size(); ++j)
         {
-            GLuint vao = FindVAO(mesh, i, GeoDeferredShadingProgram);
+            GLuint vao = FindVAO(mesh, j, GeoDeferredShadingProgram);
             glBindVertexArray(vao);
 
-            u32 submeshMaterialIdx = model.materialIdx[i];
+            u32 submeshMaterialIdx = model.materialIdx[j];
             Material& submeshMaterial = app->materials[submeshMaterialIdx];
 
             glActiveTexture(GL_TEXTURE0);
@@ -986,14 +986,14 @@ void DeferredGeometryPass(App * app)
                 glBindTexture(GL_TEXTURE_2D, app->textures[app->normalbump].handle);
                 glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "uNormalMap"), 1);
 
-                if (app->entities[i].modelIndex == 1)
+                if (app->entities[i].modelIndex == app->bump)
                     glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "noNormal"), 0);
                 else
                     glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "noNormal"), 1);
             }
 
             // Draw elements
-            Submesh& submesh = mesh.submeshes[i];
+            Submesh& submesh = mesh.submeshes[j];
             glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
         }
 

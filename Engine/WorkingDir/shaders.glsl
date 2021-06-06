@@ -285,10 +285,11 @@ void main()
 		 //Convert normal from tangent space to world space
 		mat3 TBN = mat3(T, B, N);	
 		vec3 tangentSpaceNormal = texture(uNormalTex, vTexCoord).xyz * 2.0 - vec3(1.0);
-		N = TBN * tangentSpaceNormal;
+		N = normalize(TBN * tangentSpaceNormal);
 	}
-
+	
 	oNormals = vec4(N, 1.0);
+
 
 	float depth = DepthCalc(gl_FragCoord.z) / far; 
 	oDepth = vec4(vec3(depth), 1.0);
