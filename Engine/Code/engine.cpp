@@ -446,13 +446,15 @@ void Init(App* app)
     app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
 
     //Texture bump Init
-    app->albedobump = LoadTexture2D(app, "Bump/barrel.png");
-    app->normalbump = LoadTexture2D(app, "Bump/barrelNormal.png");
+    app->albedobump = LoadTexture2D(app, "Bump/wood.png");
+    app->normalbump = LoadTexture2D(app, "Bump/toy_box_normal.png");
+    app->heightbump = LoadTexture2D(app, "Bump/toy_box_disp.png");
+
 
     //Load model patrick
     app->model = LoadModel(app, "Patrick/Patrick.obj");
     app->plane = LoadModel(app, "../WorkingDir/Plane.obj");
-    app->bump = LoadModel(app, "Bump/barrel.obj");
+    app->bump = LoadModel(app, "Bump/Cube.fbx");
 
 
     //app->plane = LoadPlane(app);
@@ -491,9 +493,13 @@ void Init(App* app)
     //create unifomr buffer
     app->uniformBuff = CreateConstantBuffer(app->maxUniformBufferSize);
 
-    int id = -1;
+    app->heightBumpParam = 1.0f;
+    app->normalMap = true;
+    app->heightMap = true;
 
     //Entities Creation
+    int id = -1;
+
     Entity plane;
     plane.worldMatrix = TransformPositionScale({ 0.0, -8.0, 0.0 }, { 25.0,1.0,25.0 });
     plane.modelIndex = app->plane;
@@ -523,7 +529,7 @@ void Init(App* app)
     app->gameObjects.push_back(GameObject("patrick3", id, app->entities.size() - 1, GOType::ENTITY, &patrick3.worldMatrix));
 
     Entity bump1;
-    bump1.worldMatrix = TransformPositionScale({ 3.0, -2.7, 0.0 }, { 0.5,0.5,0.5 });
+    bump1.worldMatrix = TransformPositionScale({ 10.0, -2.7, 0.0 }, { 0.05, 0.05, 0.05 });
     bump1.modelIndex = app->bump;
     bump1.id = ++id;
     app->entities.push_back(bump1);
@@ -692,6 +698,10 @@ void Gui(App* app)
             }
         }
     }
+    ImGui::CollapsingHeader("Bump");
+    ImGui::DragFloat("Bump", &app->heightBumpParam);
+    ImGui::End();
+
     ImGui::End();
 
     ImGui::Begin("Info");
@@ -987,6 +997,7 @@ void DeferredGeometryPass(App * app)
             glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
             glUniform1i(app->programUniformTexture, 0);
 
+            // Normal mapping passing info and creating  textures for shader
             if (app->normalMap)
             {
                 glActiveTexture(GL_TEXTURE1);
@@ -994,14 +1005,28 @@ void DeferredGeometryPass(App * app)
                 glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "uNormalTex"), 1);
 
                 if (app->entities[i].modelIndex == app->bump)
-                    glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "noNormal"), 0);
+                    glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "normalMapBool"), 1);
                 else
-                    glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "noNormal"), 1);
+                    glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "normalMapBool"), 0);
             }
 
-            // Draw elements
-            Submesh& submesh = mesh.submeshes[j];
-            glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+            // Relief mapping passing info and creating  textures for shader
+            if (app->heightMap)
+            {
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, app->textures[app->heightbump].handle);
+                glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "uHeightTex"), 2);
+                glUniform1f(glGetUniformLocation(GeoDeferredShadingProgram.handle, "uHeightBump"), app->heightBumpParam);
+
+                if (app->entities[i].modelIndex == app->bump)
+                    glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "heightMapBool"), 1);
+                else
+                    glUniform1i(glGetUniformLocation(GeoDeferredShadingProgram.handle, "heightMapBool"), 0);
+            }
+
+                // Draw elements
+                Submesh& submesh = mesh.submeshes[j];
+                glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
         }
 
     }
@@ -1009,15 +1034,7 @@ void DeferredGeometryPass(App * app)
 
 void DeferredShadingPass(App * app)
 {
-    //glEnable(GL_DEPTH_TEST);
-    //glDepthMask(GL_FALSE);
-    //glEnable(GL_BLEND);
-    //glBlendFunc(GL_ONE, GL_ONE);
-
-    //Render on this framebuffer render targets
-    //glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
-
-     // Bind the program
+    // Bind the program
     Program& ShadDeferredShadingProgram = app->programs[app->DeferredLightingIdx];
     glUseProgram(ShadDeferredShadingProgram.handle);
 
@@ -1106,6 +1123,33 @@ void Render(App* app)
                     glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
                     glUniform1i(app->programUniformTexture, 0);
+
+                    // Normal mapping passing info and creating  textures for shader
+                    if (app->normalMap)
+                    {
+                        glActiveTexture(GL_TEXTURE1);
+                        glBindTexture(GL_TEXTURE_2D, app->textures[app->normalbump].handle);
+                        glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "uNormalTex"), 1);
+
+                        if (app->entities[i].modelIndex == app->bump)
+                            glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "normalMapBool"), 1);
+                        else
+                            glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "normalMapBool"), 0);
+                    }
+
+                    // Relief mapping passing info and creating  textures for shader
+                    if (app->heightMap)
+                    {
+                        glActiveTexture(GL_TEXTURE2);
+                        glBindTexture(GL_TEXTURE_2D, app->textures[app->heightbump].handle);
+                        glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "uHeightTex"), 2);
+                        glUniform1f(glGetUniformLocation(ForwardShadingProgram.handle, "uHeightBump"), app->heightBumpParam);
+
+                        if (app->entities[i].modelIndex == app->bump)
+                            glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "heightMapBool"), 1);
+                        else
+                            glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "heightMapBool"), 0);
+                    }
 
                     // Draw elements
                     Submesh& submesh = mesh.submeshes[i];

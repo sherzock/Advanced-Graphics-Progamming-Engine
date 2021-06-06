@@ -229,7 +229,11 @@ struct App
     GameObject* active_gameObject;
     GameObject* last_active_gameObject;
 
+
+    //params for shaders
+    float heightBumpParam = 1.0f;
     bool normalMap = true;
+    bool heightMap = true;
 
     // Loop
     f32  deltaTime;
@@ -266,6 +270,7 @@ struct App
     //texture bump
     u32 albedobump;
     u32 normalbump;
+    u32 heightbump;
 
     // Model indices
     u32 model;
