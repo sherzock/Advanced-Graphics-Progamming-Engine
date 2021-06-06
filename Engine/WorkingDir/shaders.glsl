@@ -82,7 +82,7 @@ void main()
     vTexCoord = aTexCoord;
     vPosition = vec3(model* vec4(aPosition, 1.0));
     vNormal = vec3(model * vec4(aNormal, 0.0));
-    vViewDir = uCameraPosition - vPosition;
+    vViewDir = vec3(uCameraPosition - vPosition);
 	vTangent = normalize(vec3(model * vec4(aTangent, 0.0)));
     vBitangent = normalize(vec3(model * vec4(aBitangent, 0.0)));
     gl_Position = projection * view * model * vec4(aPosition, 1.0);
@@ -101,7 +101,7 @@ struct Light
 in vec2 vTexCoord;
 in vec3 vPosition; // in worldspace
 in vec3 vNormal; // in worldspace
-in vec3 uViewDir; // in worldspace
+in vec3 vViewDir; // in worldspace
 in vec3 vTangent;
 in vec3 vBitangent;
 
@@ -139,10 +139,10 @@ float DepthCalc(float depth)
 // Parallax occlusion mapping aka. relief mapping
 vec2 reliefMapping(vec2 texCoords, mat3 tangentSpaceMat)
 {
-	 int numSteps = 15;
+	 int numSteps = 60;
  
 	 // Compute the view ray in texture space
-	 vec3 rayTexspace = transpose(tangentSpaceMat) * normalize(-uViewDir.xyz);
+	 vec3 rayTexspace = transpose(tangentSpaceMat) * normalize(-vViewDir.xyz);
 	 
 	 // Increment
 	 float texSize = 248;
@@ -152,13 +152,13 @@ vec2 reliefMapping(vec2 texCoords, mat3 tangentSpaceMat)
 	 
 	 // Sampling state
 	 vec3 samplePositionTexspace = vec3(texCoords, 0.0);
-	 float sampledDepth = 1.0 - texture(uHeightTex, samplePositionTexspace.xy).r;
+	 float sampledDepth = /*1.0 - */texture(uHeightTex, samplePositionTexspace.xy).r;
 	 
 	 // Linear search
 	 for (int i = 0; i < numSteps && samplePositionTexspace.z < sampledDepth; ++i)
 	 {
 		 samplePositionTexspace += rayIncrementTexspace;
-		 sampledDepth = 1.0 - texture(uHeightTex, samplePositionTexspace.xy).r;
+		 sampledDepth = /*1.0 - */texture(uHeightTex, samplePositionTexspace.xy).r;
 	 }
 	 return samplePositionTexspace.xy;
 }
@@ -178,13 +178,13 @@ void main()
 	vec2 tcoords = vTexCoord;
 
 	if(heightMapBool ==1.0)
-		tcoords = reliefMapping(vTexCoord, TBN);
+		tcoords = reliefMapping(tcoords, TBN);
 
 	vec3 albedo = texture(uTexture, tcoords).rgb;
 
 	if (normalMapBool == 1.0)
 	{
-		vec3 tangentSpaceNormal = texture(uNormalTex, vTexCoord).xyz * 2.0 - vec3(1.0);
+		vec3 tangentSpaceNormal = texture(uNormalTex, tcoords).xyz * 2.0 - vec3(1.0);
 		N = TBN * tangentSpaceNormal;
 	}
 	
@@ -195,7 +195,7 @@ void main()
     vec3 ambientColor = albedo.xyz * ambientIntensity;
 
     //vec3 N = normalize(vNormal);		// normal
-	vec3 V = normalize(-uViewDir.xyz);	// direction from pixel to camera
+	vec3 V = normalize(-vViewDir.xyz);	// direction from pixel to camera
 
 	vec3 diffuseColor;
 	vec3 specularColor;
@@ -208,7 +208,7 @@ void main()
 		if(uLight[i].type == 1)
 			attenuation = 2.0 / length(uLight[i].position - vPosition);
 	        
-	    vec3 L = normalize(uLight[i].direction - uViewDir.xyz); // Light direction 
+	    vec3 L = normalize(uLight[i].direction - vViewDir.xyz); // Light direction 
 	    vec3 R = reflect(-L, N);								// reflected vector
 	    
 	    // Diffuse
@@ -233,6 +233,32 @@ void main()
 
 #endif
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //------------------------------------------------------------------------------------------------------
 //----------------------------------------Deferred Shading----------------------------------------------
@@ -280,9 +306,9 @@ out vec3 vBitangent;
 void main()
 {
     vTexCoord = aTexCoord;
-    vPosition = vec3(model* vec4(aPosition, 1.0));
+    vPosition = vec3(model * vec4(aPosition, 1.0));
     vNormal = vec3(model * vec4(aNormal, 0.0));
-    vViewDir = uCameraPosition - vPosition;
+    vViewDir = vec3(uCameraPosition - vPosition);
 	vTangent = normalize(vec3(model * vec4(aTangent, 0.0)));
     vBitangent = normalize(vec3(model * vec4(aBitangent, 0.0)));
     gl_Position = projection * view * model * vec4(aPosition, 1.0);
@@ -301,7 +327,7 @@ struct Light
 in vec2 vTexCoord;
 in vec3 vPosition; // in worldspace
 in vec3 vNormal; // in worldspace
-in vec3 uViewDir; // in worldspace
+in vec3 vViewDir; // in worldspace
 in vec3 vTangent;
 in vec3 vBitangent;
 
@@ -339,10 +365,10 @@ float DepthCalc(float depth)
 // Parallax occlusion mapping aka. relief mapping
 vec2 reliefMapping(vec2 texCoords, mat3 tangentSpaceMat)
 {
-	 int numSteps = 15;
+	 int numSteps = 60;
  
 	 // Compute the view ray in texture space
-	 vec3 rayTexspace = transpose(tangentSpaceMat) * normalize(-uViewDir.xyz);
+	 vec3 rayTexspace = transpose(tangentSpaceMat) * normalize(-vViewDir.xyz);
 	 
 	 // Increment
 	 float texSize = 248;
@@ -352,13 +378,13 @@ vec2 reliefMapping(vec2 texCoords, mat3 tangentSpaceMat)
 	 
 	 // Sampling state
 	 vec3 samplePositionTexspace = vec3(texCoords, 0.0);
-	 float sampledDepth = 1.0 - texture(uHeightTex, samplePositionTexspace.xy).r;
+	 float sampledDepth = texture(uHeightTex, samplePositionTexspace.xy).r;
 	 
 	 // Linear search
 	 for (int i = 0; i < numSteps && samplePositionTexspace.z < sampledDepth; ++i)
 	 {
 		 samplePositionTexspace += rayIncrementTexspace;
-		 sampledDepth = 1.0 - texture(uHeightTex, samplePositionTexspace.xy).r;
+		 sampledDepth = texture(uHeightTex, samplePositionTexspace.xy).r;
 	 }
 	 return samplePositionTexspace.xy;
 }
@@ -366,8 +392,6 @@ vec2 reliefMapping(vec2 texCoords, mat3 tangentSpaceMat)
 void main()
 {
 	oPosition = vec4(vPosition,1.0);
-	//oNormals = vec4(normalize(vNormal), 1.0); 
-	oAlbedo = texture(uTexture, vTexCoord);
 
 	vec3 T = normalize(vTangent);
 	vec3 B = normalize(vBitangent);
@@ -377,14 +401,13 @@ void main()
 	vec2 tcoords = vTexCoord;
 
 	if(heightMapBool ==1.0)
-		tcoords = reliefMapping(vTexCoord, TBN);
+		tcoords = reliefMapping(tcoords, TBN);
 
-	vec3 albedo = texture(uTexture, tcoords).rgb;
 	oAlbedo = texture(uTexture, tcoords);
 
 	if (normalMapBool == 1.0)
 	{
-		vec3 tangentSpaceNormal = texture(uNormalTex, vTexCoord).xyz * 2.0 - vec3(1.0);
+		vec3 tangentSpaceNormal = texture(uNormalTex, tcoords).xyz * 2.0 - vec3(1.0);
 		N = TBN * tangentSpaceNormal;
 	}
 	
@@ -398,6 +421,26 @@ void main()
 
 #endif
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //---------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------
