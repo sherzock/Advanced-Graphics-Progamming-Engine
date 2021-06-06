@@ -22,11 +22,15 @@
 
 <p>Hierarchy of loaded models.</p>
 
-![alt 1](webImgs/hierarchy.png)<br>
+![alt 1](webImgs/hierarchy.png)
+
+<br>
 
 <p>Info window with opengl information and app info.</p>
 
-![alt 2](webImgs/info.png)<br>
+![alt 2](webImgs/info.png)
+
+<br>
 
 <p>Inspector to edit the selected entity.</p>
 
