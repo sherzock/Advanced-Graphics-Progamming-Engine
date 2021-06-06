@@ -19,32 +19,30 @@
 
 <h2>Features</h2>
 
-<ul>
-	<li>Hierarchy of loaded models.</li>
+<p>Hierarchy of loaded models.</p>
 ![alt All](webImgs/hierarchy.png)
-	<li>Info window with opengl information and app info.</li>
+<p>Info window with opengl information and app info.</p>
 ![alt All](webImgs/info.png)
-	<li>Inspector to edit the selected entity.</li>
-	<li>Tranform to translate, scale, rotate and edit the different entities.</li>
+<p>Inspector to edit the selected entity.</p>
+<p>Tranform to translate, scale, rotate and edit the different entities.</p>
 ![alt All](webImgs/inspector1.png)
 ![alt All](webImgs/inspector2.png)
-	<li>Game window with the render and two combo boxes to edit the render type and mode.</li>
-	<li>CheckBoxes to enable and disable bloom effect and Height map.</li>
+<p>Game window with the render and two combo boxes to edit the render type and mode.</p>
+<p>CheckBoxes to enable and disable bloom effect and Height map.</p>
 ![alt All](webImgs/renderbox.png)
 ![alt All](webImgs/modes.png)
-	<li>Parameters can be edited for bloom effect and Height map.</li>
+<p>Parameters can be edited for bloom effect and Height map.</p>
 ![alt All](webImgs/BloomParams.png)
 ![alt All](webImgs/bumpParams.png)
-</ul>
 
 <h2>Effects Comparison Screenshots</h2>
 
 <h3>Bloom</h3>
 
-![alt All](webImgs/BloomOff.png)
-![alt All](webImgs/BloomOn.png)
+![alt All](webImgs/BloomOff.png)<br>
+![alt All](webImgs/BloomOn.png)<br>
 
 <h3>Relief Mapping</h3>
 
-![alt All](webImgs/bumpOff.png)
-![alt All](webImgs/bumpOn.png)
+![alt All](webImgs/bumpOff.png)<br>
+![alt All](webImgs/bumpOn.png)<br>
