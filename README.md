@@ -2,7 +2,9 @@
 
 <h2>Deferred Engine </h2>
 
-Advanced Programming Project made by university students: Èric Canela and Jacobo Galofre
+<p>Advanced Programming Project made by university students: Èric Canela and Jacobo Galofre</p>
+
+![alt All](webImgs/All.png)<br>
 
 <h2>Githubs</h2>
 
@@ -12,18 +14,105 @@ Advanced Programming Project made by university students: Èric Canela and Jacob
 
 <h2>Controls</h2>
 
-<p>W/A/S/D : Move Camera</p>
+<p>W/A/S/D : Move Camera (On Free Mode)</p>
 <p>F: Toggle Orbital and Free Camera</p>
 <p>Right mouse button: Rotate Camera</p>
 
 <h2>Features</h2>
 
-<ul>
-	<li>Hierarchy of loaded models.</li>
-	<li>Info window with opengl information and app info.</li>
-	<li>Inspector to edit the selected entity.</li>
-	<li>Tranform to translate, scale, rotate and edit the different entities.</li>
-	<li>Game window with the render and two combo boxes to edit the render type and mode.</li>
-	<li>CheckBoxes to enable and disable bloom effect and Height map.</li>
-	<li>Parameters can be edited for bloom effect and Height map.</li>
-</ul>
+<p>Hierarchy of loaded models.</p>
+
+![alt 1](webImgs/hierarchy.png)
+
+<br>
+
+<p>Info window with opengl information and app info.</p>
+
+![alt 2](webImgs/info.png)
+
+<br>
+
+<p>Inspector to edit the selected entity.</p>
+
+<p>Tranform to translate, scale, rotate and edit the different entities.</p>
+
+![alt 3](webImgs/inspector1.png)
+
+<br>
+
+![alt 4](webImgs/inspector2.png)
+
+<br>
+
+<p>Game window with the render and two combo boxes to edit the render type and mode.
+<br>
+CheckBoxes to enable and disable bloom effect and Height map.</p>
+
+![alt 5](webImgs/renderbox.png)
+
+<br>
+
+![alt 6](webImgs/modes.png)
+
+<br>
+
+<p>Parameters can be edited for bloom effect and Height map.</p>
+
+![alt 7](webImgs/BloomParams.png)
+
+<br>
+
+![alt 8](webImgs/bumpParams.png)
+
+<br>
+
+<h2>How To Use Effects</h2>
+
+
+<h3>Bloom</h3>
+
+To use the bloom effect you can activate it by pressing the check box on the inspector which you will find at the right of the engine when opening it for the first time.
+There you will also find other parameters you can modify for the effect, such as the threshold, the kernel radius and the LODs' intensities from level 0 to level 4.
+
+<br>
+
+![Bloom Params](webImgs/BloomParams.png)
+
+<br>
+
+<h3>Relief Mapping</h3>
+
+To use the Relief Mapping effect you will have to toggle the checkbox you will find on top of the scene window when first opening the engine, alse you can try and modify it's
+parameters which you will find in the inspector at the right side of the engine when first opening it. The parameters you can modify are: Bumpiness, Texture size and and the relief map steps performed.
+
+<br>
+
+![Bloom Params](webImgs/modes.png)
+
+<br>
+
+![Bloom Params](webImgs/bumpParams.png)
+
+<br>
+
+<h2>Effects Comparison Screenshots</h2>
+
+<h3>Bloom</h3>
+
+![alt 9](webImgs/BloomOff.png)
+
+<br>
+
+![alt 10](webImgs/BloomOn.png)
+
+<br>
+
+<h3>Relief Mapping</h3>
+
+![alt 11](webImgs/bumpOff.png)
+
+<br>
+
+![alt 12](webImgs/bumpOn.png)
+
+<br>
