@@ -534,7 +534,7 @@ void Init(App* app)
 
     //Load model patrick
     app->model = LoadModel(app, "Patrick/Patrick.obj");
-    app->plane = LoadModel(app, "../WorkingDir/Plane.obj");
+    app->plane = LoadModel(app, "../Engine/Plane.obj");
     app->bump = LoadModel(app, "Bump/Cube.fbx");
 
 
@@ -695,8 +695,6 @@ void Gui(App* app)
     ImGui::PopItemWidth();
     //ImGui::SameLine();
     //ImGui::Checkbox("Normal Map", &app->normalMap);
-    ImGui::SameLine();
-    ImGui::Checkbox("Height Map", &app->heightMap);
 
     switch (app->selectedmodes)
     {
@@ -838,7 +836,7 @@ void Gui(App* app)
 
 
     ImGui::NewLine();
-    ImGui::Text("Bump");
+    ImGui::Checkbox("Bump", &app->heightMap);
     ImGui::DragFloat("Bump", &app->heightBumpParam, 0.1f, 0.0);
     ImGui::DragInt("Texture Size", &app->texSize, 1.0f, 0);
     ImGui::DragInt("Relief Steps", &app->steps, 1.0f, 0);
