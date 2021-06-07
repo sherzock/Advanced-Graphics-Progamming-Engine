@@ -68,11 +68,12 @@ CheckBoxes to enable and disable bloom effect and Height map.</p>
 
 <h2>How To Use Effects</h2>
 
+All these effects are included in the same file named "shaders.glsl" inside the root folder.
 
 <h3>Bloom</h3>
 
-To use the bloom effect you can activate it by pressing the check box on the inspector which you will find at the right of the engine when opening it for the first time.
-There you will also find other parameters you can modify for the effect, such as the threshold, the kernel radius and the LODs' intensities from level 0 to level 4.
+To use the bloom effect you can activate it by pressing the checkbox on the inspector which you will find at the right of the engine when opening it for the first time.
+You can can modify the parameters to change the result of the effect. The parameters you can modify are: threshold, the kernel radius and the 5 LODs' intensity levels.
 
 <br>
 
@@ -82,8 +83,8 @@ There you will also find other parameters you can modify for the effect, such as
 
 <h3>Relief Mapping</h3>
 
-To use the Relief Mapping effect you will have to toggle the checkbox you will find on top of the scene window when first opening the engine, alse you can try and modify it's
-parameters which you will find in the inspector at the right side of the engine when first opening it. The parameters you can modify are: Bumpiness, Texture size and and the relief map steps performed.
+To use the Relief Mapping effect you will have to toggle the checkbox on the inspector which you will find at the right of the engine when opening it for the first time.
+You can modify the parameters to change the result of the effect. The parameters you can modify are: Bumpiness, Texture size and and the relief map steps performed.
 
 <br>
 
