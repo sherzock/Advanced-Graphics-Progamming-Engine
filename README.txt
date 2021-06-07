@@ -11,7 +11,7 @@ Eric Canela : https://github.com/knela96
 
 ============================================================Controls============================================================
 
-W/A/S/D : Move Camera
+W/A/S/D : Move Camera (On Free mode)
 
 F: Toggle Orbital and Free Camera
 

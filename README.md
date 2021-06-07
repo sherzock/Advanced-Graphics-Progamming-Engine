@@ -14,7 +14,7 @@
 
 <h2>Controls</h2>
 
-<p>W/A/S/D : Move Camera</p>
+<p>W/A/S/D : Move Camera (On Free Mode)</p>
 <p>F: Toggle Orbital and Free Camera</p>
 <p>Right mouse button: Rotate Camera</p>
 
