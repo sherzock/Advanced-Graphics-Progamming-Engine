@@ -44,9 +44,9 @@
 
 <br>
 
-<p>Game window with the render and two combo boxes to edit the render type and mode.
+<p>Game window with the render and two combo boxes to edit the render type (Color, Depth, Albedo, Normal, Position) and render modes (Forward or Deferred).</p>
+
 <br>
-CheckBoxes to enable and disable bloom effect and Height map.</p>
 
 ![alt 5](https://github.com/sherzock/Advanced-Graphics-Progamming-Engine/blob/main/webImgs/renderbox.PNG)
 
@@ -56,7 +56,7 @@ CheckBoxes to enable and disable bloom effect and Height map.</p>
 
 <br>
 
-<p>Parameters can be edited for bloom effect and Height map.</p>
+<p>Implemented effects of Bloom and Relief Mapping</p>
 
 ![alt 7](https://github.com/sherzock/Advanced-Graphics-Progamming-Engine/blob/main/webImgs/BloomParams.PNG)
 
@@ -85,10 +85,6 @@ You can can modify the parameters to change the result of the effect. The parame
 
 To use the Relief Mapping effect you will have to toggle the checkbox on the inspector which you will find at the right of the engine when opening it for the first time.
 You can modify the parameters to change the result of the effect. The parameters you can modify are: Bumpiness, Texture size and and the relief map steps performed.
-
-<br>
-
-![Bloom Params](https://github.com/sherzock/Advanced-Graphics-Progamming-Engine/blob/main/webImgs/modes.PNG)
 
 <br>
 
