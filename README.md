@@ -44,9 +44,9 @@
 
 <br>
 
-<p>Game window with the render and two combo boxes to edit the render type (Color, Depth, Albedo, Normal, Position) and render modes (Forward or Deferred).
+<p>Game window with the render and two combo boxes to edit the render type (Color, Depth, Albedo, Normal, Position) and render modes (Forward or Deferred).</p>
+
 <br>
-CheckBoxes to enable and disable bloom effect and Height map.</p>
 
 ![alt 5](https://github.com/sherzock/Advanced-Graphics-Progamming-Engine/blob/main/webImgs/renderbox.PNG)
 
@@ -56,7 +56,7 @@ CheckBoxes to enable and disable bloom effect and Height map.</p>
 
 <br>
 
-<p>Parameters can be edited for bloom effect and Height map.</p>
+<p>Implemented effects of Bloom and Relief Mapping</p>
 
 ![alt 7](https://github.com/sherzock/Advanced-Graphics-Progamming-Engine/blob/main/webImgs/BloomParams.PNG)
 
