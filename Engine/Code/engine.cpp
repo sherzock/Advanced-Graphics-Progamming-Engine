@@ -524,7 +524,7 @@ void Init(App* app)
 
     //Texture Initialization
 
-    app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
+    app->whiteTexIdx = LoadTexture2D(app, "Plane/color_white.png");
 
     //Texture bump Init
     app->albedobump = LoadTexture2D(app, "Bump/wood.png");
@@ -534,7 +534,7 @@ void Init(App* app)
 
     //Load model patrick
     app->model = LoadModel(app, "Patrick/Patrick.obj");
-    app->plane = LoadModel(app, "../Engine/Plane.obj");
+    app->plane = LoadModel(app, "Plane/Plane.obj");
     app->bump = LoadModel(app, "Bump/Cube.fbx");
 
 
