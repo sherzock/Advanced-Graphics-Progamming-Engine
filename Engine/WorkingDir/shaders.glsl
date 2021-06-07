@@ -166,7 +166,7 @@ vec2 reliefMapping(vec2 texCoords, mat3 tangentSpaceMat)
 
 void main()
 {
-    	// Mat parameters
+    // Mat parameters
     vec3 specular = vec3(1.0);	// color reflected by mat
     float shininess = 1.0;		// how strong specular reflections are (more shininess harder and smaller spec)
 	//vec4 albedo = texture(uTexture, vTexCoord);

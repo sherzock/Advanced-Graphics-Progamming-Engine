@@ -408,10 +408,15 @@ void FrameBufferObject(App* app)
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void FrameBufferObjectBloom(App* app) {
 
     //Bloom Textures
-    if (app->rtBright != 0) glDeleteTextures(1, &app->rtBright);
-    glGenFramebuffers(1, &app->rtBright);
+    if (app->rtBright != 0)
+        glDeleteTextures(1, &app->rtBright);
+
+    glGenTextures(1, &app->rtBright);
     glBindTexture(GL_TEXTURE_2D, app->rtBright);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -424,11 +429,13 @@ void FrameBufferObject(App* app)
     glTexImage2D(GL_TEXTURE_2D, 2, GL_RGBA16F, app->displaySize.x / 8, app->displaySize.y / 8, 0, GL_RGBA, GL_FLOAT, NULL);
     glTexImage2D(GL_TEXTURE_2D, 3, GL_RGBA16F, app->displaySize.x / 16, app->displaySize.y / 16, 0, GL_RGBA, GL_FLOAT, NULL);
     glTexImage2D(GL_TEXTURE_2D, 4, GL_RGBA16F, app->displaySize.x / 32, app->displaySize.y / 32, 0, GL_RGBA, GL_FLOAT, NULL);
-    glGenerateMipmap(GL_TEXTURE_2D); 
+    glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    if (app->rtBloomH != 0) glDeleteTextures(1, &app->rtBloomH);
-    glGenFramebuffers(1, &app->rtBloomH);
+    if (app->rtBloomH != 0)
+        glDeleteTextures(1, &app->rtBloomH);
+
+    glGenTextures(1, &app->rtBloomH);
     glBindTexture(GL_TEXTURE_2D, app->rtBloomH);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -441,7 +448,7 @@ void FrameBufferObject(App* app)
     glTexImage2D(GL_TEXTURE_2D, 2, GL_RGBA16F, app->displaySize.x / 8, app->displaySize.y / 8, 0, GL_RGBA, GL_FLOAT, NULL);
     glTexImage2D(GL_TEXTURE_2D, 3, GL_RGBA16F, app->displaySize.x / 16, app->displaySize.y / 16, 0, GL_RGBA, GL_FLOAT, NULL);
     glTexImage2D(GL_TEXTURE_2D, 4, GL_RGBA16F, app->displaySize.x / 32, app->displaySize.y / 32, 0, GL_RGBA, GL_FLOAT, NULL);
-    glGenerateMipmap(GL_TEXTURE_2D); 
+    glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     //Bloom FrameBuffer
@@ -552,7 +559,7 @@ void Init(App* app)
     Camera& camera = app->cam;
     camera.y = 0.0f;
     camera.p = 0.0f;
-    camera.position = glm::vec3(0.0, 0.0, 10.0);
+    camera.position = glm::vec3(0.0, 5.0, 20.0);
     camera.rotationCenter = { 0.0, 0.0, 0.0 };
     camera.cMode = CamMode::FREE;
 
@@ -606,11 +613,11 @@ void Init(App* app)
     app->gameObjects.push_back(GameObject("patrick3", id, app->entities.size() - 1, GOType::ENTITY, &patrick3.worldMatrix));
 
     Entity bump1;
-    bump1.worldMatrix = TransformPositionScale({ 10.0, -2.7, 0.0 }, { 0.05, 0.05, 0.05 });
+    bump1.worldMatrix = TransformPositionScale({ 15.0, 5, 0.0 }, { 0.05, 0.05, 0.05 });
     bump1.modelIndex = app->bump;
     bump1.id = ++id;
     app->entities.push_back(bump1);
-    app->gameObjects.push_back(GameObject("bump Barrel", id, app->entities.size() - 1, GOType::ENTITY, &bump1.worldMatrix));
+    app->gameObjects.push_back(GameObject("Bump Box", id, app->entities.size() - 1, GOType::ENTITY, &bump1.worldMatrix));
 
     // lights Creation
     Light light1;
@@ -643,11 +650,34 @@ void Init(App* app)
     app->active_gameObject = &app->gameObjects[0];
     GetTrasform(app, *app->active_gameObject->modelMatrix);
 
-    Camera& c = app->cam;
+    FrameBufferObjectBloom(app);
+}
 
-    c.up = vec3(0, 1, 0);
-    c.forward = vec3(0, 0, 1);
-    c.right = glm::cross(c.up, c.forward);
+void ShowOverlay(App* app) {
+    // FIXME-VIEWPORT: Select a default viewport
+    const float DISTANCE = 10.0f;
+    static int corner = 0;
+    ImGuiIO& io = ImGui::GetIO();
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+    if (corner != -1)
+    {
+        window_flags |= ImGuiWindowFlags_NoMove;
+        ImVec2 work_area_pos = ImGui::GetWindowPos();   // Instead of using viewport->Pos we use GetWorkPos() to avoid menu bars, if any!
+        ImVec2 work_area_size = ImGui::GetContentRegionAvail();
+        ImVec2 window_pos = work_area_pos;
+        window_pos.x += 10;
+        window_pos.y += 55;
+        ImVec2 window_pos_pivot = ImVec2((corner & 1) ? 1.0f : 0.0f, (corner & 2) ? 1.0f : 0.0f);
+        ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+    }
+    ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
+    bool b = true;
+    if (ImGui::Begin("Example: Simple overlay", &b, window_flags))
+    {
+        ImGui::Text("Toggle Camera [F]");
+        ImGui::Text((app->cam.cMode == CamMode::FREE) ? "FREE CAMERA" : "ORBITAL CAMERA");
+    }
+    ImGui::End();
 }
 
 
@@ -687,6 +717,11 @@ void Gui(App* app)
         break;
     }
 
+    app->displaySize.x = ImGui::GetContentRegionAvail().x;
+    app->displaySize.y = ImGui::GetContentRegionAvail().y;
+
+    ShowOverlay(app);
+
     switch (app->modes)
     {
     case Modes::Mode_Color:
@@ -695,7 +730,6 @@ void Gui(App* app)
 
     case Modes::Mode_Normal:
         ImGui::Image((void*)app->normalTexhandle, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
-        //ImGui::Image((void*)app->rtBloomH, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
         break;
 
     case Modes::Mode_Albedo:
@@ -706,7 +740,6 @@ void Gui(App* app)
         ImGui::Image((void*)app->depthTexhandle, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
         break;
     case Modes::Mode_Position:
-        //ImGui::Image((void*)app->rtBright, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
         ImGui::Image((void*)app->positionTexhandle, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
         break;
     }
@@ -720,8 +753,6 @@ void Gui(App* app)
         break;
     }
 
-
-    //ImGui::Image((void*)app->colorTexHandle, ImVec2(app->displaySize.x, app->displaySize.y), ImVec2(0, 1), ImVec2(1, 0));
     ImGui::End();
 
     ImGui::Begin("Hierarchy");
@@ -792,17 +823,21 @@ void Gui(App* app)
         }
     }
 
+    if (app->mode == Mode::Mode_DeferredShading)
+    {
+        ImGui::NewLine();
+        ImGui::Checkbox("Active Bloom", &app->renderBloom);
+        ImGui::DragFloat("Threshold", &app->threshold, 0.01, 0, 1);
+        ImGui::DragInt("Kernel Radius", &app->kernelRadius, 0.1, 0, 50);
+        ImGui::SliderFloat("LOD0 Intensity", &app->LOD0, 0, 2);
+        ImGui::SliderFloat("LOD1 Intensity", &app->LOD1, 0, 2);
+        ImGui::SliderFloat("LOD2 Intensity", &app->LOD2, 0, 2);
+        ImGui::SliderFloat("LOD3 Intensity", &app->LOD3, 0, 2);
+        ImGui::SliderFloat("LOD4 Intensity", &app->LOD4, 0, 2);
+    }
+
+
     ImGui::NewLine();
-    ImGui::Checkbox("Active Bloom", &app->renderBloom);
-    ImGui::DragFloat("Threshold", &app->threshold, 0.01, 0, 1);
-    ImGui::DragInt("Kernel Radius", &app->kernelRadius, 0.1, 0, 50);
-    ImGui::SliderFloat("LOD0 Intensity", &app->LOD0, 0, 2);
-    ImGui::SliderFloat("LOD1 Intensity", &app->LOD1, 0, 2);
-    ImGui::SliderFloat("LOD2 Intensity", &app->LOD2, 0, 2);
-    ImGui::SliderFloat("LOD3 Intensity", &app->LOD3, 0, 2);
-    ImGui::SliderFloat("LOD4 Intensity", &app->LOD4, 0, 2);
-
-
     ImGui::Text("Bump");
     ImGui::DragFloat("Bump", &app->heightBumpParam, 0.1f, 0.0);
     ImGui::DragInt("Texture Size", &app->texSize, 1.0f, 0);
@@ -1042,6 +1077,7 @@ void Update(App* app)
     if (app->displaySize != app->displaySizeLastFrame)
     {
         FrameBufferObject(app);
+        FrameBufferObjectBloom(app);
         app->displaySizeLastFrame = app->displaySize;
     }
 }
@@ -1166,23 +1202,35 @@ void DeferredShadingPass(App * app)
 
 void Render(App* app)
 {
-    GLuint drawBBuffers[] =
-    {
-        GL_COLOR_ATTACHMENT0,
-        GL_COLOR_ATTACHMENT1,
-    };
-
     glBindFramebuffer(GL_FRAMEBUFFER, app->fboBloom1);
-    glDrawBuffers(ARRAY_COUNT(drawBBuffers), drawBBuffers);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // Clear the framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, app->fboBloom2);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    glBindFramebuffer(GL_FRAMEBUFFER, app->fboBloom3);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, app->fboBloom4);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, app->fboBloom5);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, app->framebufferHandle);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Set the viewport
     glViewport(0, 0, app->displaySize.x, app->displaySize.y);
@@ -1200,7 +1248,7 @@ void Render(App* app)
         glDrawBuffers(ARRAY_COUNT(drawbuffers), drawbuffers);
 
         // Clear the framebuffer
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 

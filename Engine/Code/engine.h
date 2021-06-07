@@ -173,6 +173,7 @@ struct Camera
     glm::vec3 cameraReference;
     glm::vec3 rotationCenter;
     CamMode cMode = CamMode::FREE;
+    glm::mat4x4 transform;
 };
 
 enum class GOType
