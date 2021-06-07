@@ -1300,6 +1300,8 @@ void Render(App* app)
                     glBindTexture(GL_TEXTURE_2D, app->textures[app->heightbump].handle);
                     glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "uHeightTex"), 2);
                     glUniform1f(glGetUniformLocation(ForwardShadingProgram.handle, "uHeightBump"), app->heightBumpParam);
+                    glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "texSize"), app->texSize);
+                    glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "steps"), app->steps);
 
                     if (app->entities[i].modelIndex == app->bump)
                         glUniform1i(glGetUniformLocation(ForwardShadingProgram.handle, "heightMapBool"), 1);
