@@ -524,7 +524,7 @@ void Init(App* app)
 
     //Texture Initialization
 
-    app->whiteTexIdx = LoadTexture2D(app, "Plane/color_white.png");
+    app->whiteTexIdx = LoadTexture2D(app, "Plane/color_magenta.png");
 
     //Texture bump Init
     app->albedobump = LoadTexture2D(app, "Bump/wood.png");
